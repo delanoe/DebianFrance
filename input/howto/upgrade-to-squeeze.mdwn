@@ -1,0 +1,165 @@
+
+# Upgrade from lenny to squeeze
+
+Make sure to coordinate with whoever uses the host, be it the buildd
+operator, the QA team, the ftp team or just announce it if it's a
+general developer box.
+
+on buildds:
+
+	cd ~buildd
+	sudo su - buildd
+	touch NO-DAEMON-PLEASE EXIT-DAEMON-PLEASE && exit
+
+	now wait for the buildd to quit
+
+turn off samhain
+
+	/etc/init.d/samhain stop &&
+	mv /etc/rc2.d/S19samhain /etc/rc2.d/K19samhain # and stay down
+
+
+maybe turn off exim
+
+	/etc/init.d/exim4 stop &&
+	mv /etc/rc2.d/S20exim4 /etc/rc2.d/K20exim4 # so it stays down
+
+
+install deborphan, clean up
+
+	apt-get install deborphan dialog
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2=="deinstall" {print $1}' &&
+	echo "really purge these [y/N]?" && read ans && [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2=="deinstall" {print $1}'` &&
+	echo "These are not at install:" && dpkg --get-selections | awk '$2!="install" {print $1}'
+
+change sources list entries to squeeze:
+
+	cd /etc/apt/sources.list.d && sed -i "s#lenny#squeeze#g" debian.list
+
+update apt list
+
+	apt-get update
+
+upgrade
+
+	apt-get install locales-all apt dpkg
+
+rest follows
+
+	apt-get dist-upgrade
+
+use dash as system shell (/bin/sh).
+
+reject changes to /etc/pam.d/sudo (puppet will install a new file later anyway)
+
+reject changes to /etc/munin/plugin-conf.d/munin-node (puppet will install a new file later anyway)
+
+ * keep local (i.e. reject (N)):
+  * all changes relating to exim  (in /etc/exim4 and in logrotate)
+  * /etc/ldap/ldap.conf
+  * /etc/nagios/nrpe.cfg
+  * /etc/samhain/samhainrc
+  * /etc/munin/munin-node.conf
+  * /etc/logrotate.d/apache2
+  * /etc/apache2/apache2.conf
+  * /etc/apache2/ports.conf
+
+update dsa-nagios.git (add host to squeeze hostgroup)
+
+update dsa-puppet.git (add to squeeze list in local.yaml)
+
+do a puppet run:
+
+	puppetd -t; puppetd -t
+
+upgrade once more (security etc)
+
+	apt-get update && apt-get dist-upgrade
+
+if you are moving from a dsa kernel to a debian kernel, add non-free to sources list, then
+
+	apt-get install firmware-linux
+
+maybe also
+
+	apt-get install firmware-bnx2
+
+if you are an nfs client, make sure to load the module before boot completes:
+
+	echo nfs >> /etc/modules
+
+if you are an autofs node, make sure to load the module before boot completes:
+
+	echo autofs4 >> /etc/modules
+
+These last two are because autofs in particular lazy loads the modules, and it
+will happen after we've disabled module loading.
+
+clean up transitions
+
+	dpkg --purge dhcp3-client && apt-get install isc-dhcp-client  # mark as non-auto
+
+Do the same for grub/grub-pc if you did upgrade-from-grub-legacy
+
+	(reboot)
+	upgrade-from-grub-legacy
+	(reboot)
+	apt-get purge grub &&
+	apt-get install grub-pc
+
+clean up old libs
+
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+check for unneeded/obsolete packages
+
+	apt-get autoremove
+
+	/usr/lib/nagios/plugins/dsa-check-packages
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2=="deinstall" {print $1}' &&
+	echo "really purge these [y/N]?" && read ans && [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2=="deinstall" {print $1}'` &&
+	echo "These are not at install:" && dpkg --get-selections | awk '$2!="install" {print $1}'
+
+purge cruft that upgrade doesn't remove
+
+	apt-get remove --purge emacs22-common libxmlrpc-ruby libcap1 emacs22-nox emacs22-bin-common libvolume-id0 gcc-4.2-base ifenslave libopenssl-ruby1.8 mailx
+
+re-init samhain
+
+possibly reboot
+
+re-enable exim, samhain
+
+	mv /etc/rc2.d/K??exim4 /etc/rc2.d/S02exim4
+	mv /etc/rc2.d/K??samhain /etc/rc2.d/S02samhain
+	env -i /etc/init.d/exim4 start
+	env -i /etc/init.d/samhain start
+
+	insserv
+
+re-init samhain
+
+### Troubleshooting
+
+### Problems with CCISS
+
+On custom kernels in squeeze it seems that udev stopped to create cciss devices, thus in /lib/udev/devices do a /dev/MAKEDEV cciss and reboot.
+
+	cd /lib/udev/devices
+	/dev/MAKEDEV cciss
+
+### mailq plugin no longer works
+	apt-get install nagios-plugins-standard

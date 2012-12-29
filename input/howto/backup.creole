@@ -1,0 +1,54 @@
+= Debian backup =
+
+beethoven.debian.org alias backup.debian.org is Debian's backup machine.
+
+== Backup organisation ==
+
+{{{/org/backup.debian.org}}} contains two directories, {{{staging}}} and
+{{{backup}}}.  The latter contains the backup and is organised in directories
+with date directories that contain all the files from that particular day.  The
+number of kept copies is configured in files in {{{/etc/da-backup-manager/}}}.
+
+The {{{/staging/}}} directory is used by the clients, i.e. the .debian.org
+hosts that have something valuable to backup.  The contents of the particular
+directories is pushed from root to root@backup.debian.org via rsync via a
+restricted SSH session based on key-authentication.
+
+Directories:
+
+{{{
+  /org/backup.debian.org/staging/
+                                 wiki.debian.org
+                                 cvs.debian.org
+                                 ...
+
+  /org/backup.debian.org/backup/
+                               wiki.debian.org/
+                                               20050909
+                                               20050910
+                                               20050911
+                                               ...
+                               cvs.debian.org/
+                                              20050909
+                                              20050910
+                                              20050911
+                                              ...
+                                 ...
+}}}
+
+== Adding new backup directories ==
+
+* install da-backup on the client
+* create a crontab that runs da-backup daily at some convenient time
+* configure the directories in {{{/etc/da-backup}}}
+* configure how many copies of the directory should be kept in
+  beethoven's {{{/etc/da-backup-manager/}}}
+* run {{{da-backup -v}}} on the client to see if it all works.
+
+
+* Backup items should be called {{{<host>/<directory>}}}.
+  Historically we also used {{{services/<servicename>}}}.
+
+== Consistency checks ==
+
+* Run {{{sudo -u nagios /usr/lib/nagios/plugins/dsa-check-dabackup-server}}}

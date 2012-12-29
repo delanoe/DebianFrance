@@ -1,0 +1,7 @@
+== Things DSA needs to do IF a new DPL arises ==
+
+* add new DPL to the 'dpl' unix group in ud-ldap
+* set the RT account of the new DPL to interactive, so he can login
+* set a RT password for the new DPL, for that you need to enter your own password at the old password field!
+* add new DPL to the 'dpl' RT group
+* edit master:/org/debian.org/mail/aliases, set new DPL email address

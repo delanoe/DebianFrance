@@ -1,0 +1,161 @@
+= Hardware Wishlist =
+
+== snapshot.debian.org ==
+
+Currently snapshot.debian.net is operated by a single individual on their
+hardware at home. It is a service archiving old binary and source packages.
+Access to old packages, which have in the meantime been deleted from the
+regular debian archive, allows Developers and Users to debug upgrade problems,
+to check when regressions were introduced, to check if old packages had been
+miscompiled, to downgrade to older versions while bugs are being fixed etc.
+
+Requirements:
+
+* Two systems with sufficient storage, hosted somewhere not in the US (so we
+  can import old non-US into it).
+* Storage should be at least on the order of 8T (currently snapshot.d.n is
+  using about 4T), and easily expandable
+* remote management stuff
+
+Proposers:
+
+* Joerg Jaspert/ftpteam
+* Peter Palfrader
+
+
+== data.d.o ==
+
+A service by ftpmaster to host larger arch-all packages for datasets like
+scientific databases (e.g. RCSB PDB, a database of protein structures) or
+datasets for games.
+
+This service could (and probably should) share hardware with snapshot.
+
+Proposers:
+
+* ftpteam/Joerg Jaspert
+
+
+
+== merge.d.o ==
+
+I'd like to use Ubuntu's merge-o-matic to generate diffs between Debian's
+source archive and the source archives of various other Debian-based distros
+(Knoppix, Freespire, Mepis, Sidux, gNewSense and so on). The result will be
+much like patches.ubuntu.com. merge-o-matic downloads source packages, unpacks
+them and generates diffs against unpacked pure debian source packages. As a
+result lots of disk space would be required since the whole Debian archive plus
+an unpacked version of it and the same for each derivative distribution is
+needed.
+
+Requirements:
+
+* a system with sufficient disk space (how much is that?)
+
+Proposers:
+
+* Paul Wise
+
+
+== source.debian.org ==
+
+Idea: A machine which has all sources extracted from orig.tar.gz + diff applied for all dists.
+
+Requirements:
+
+* a system with sufficient disk space (how much is that?)
+
+Proposers:
+
+* Noel Koethe
+
+= Historical =
+
+These proposals probably are no longer relevant:
+
+== new debian mail setup ==
+
+A set of systems that will handle all incoming mail for all debian systems.
+Currently our incoming mail handling is on the individual host hosting a
+service, i.e. on master.debian.org for @debian.org, on bugs.debian.org for the
+bug tracking system, on lists.debian.org for our mailinglists and on several
+other systems for their individual, smaller email traffic.
+
+Centralizing email handling will allow us to maintain our anti-spam measures in
+a single point, avoiding duplicate work and hopefully improving our success.
+
+Requirements:
+
+* Four or so systems, in at least two different locations, capable of handling
+  modern anti-spam software. This probably needs a bit of CPU.
+* remote management stuff
+
+Proposers:
+
+* Martin Zobel-Helas
+* Stephen Gran
+
+We probably have sufficient hardware for this. Current plan involves using one
+new box from HP, murphy, a new old sparc that zobel gets from some place, and
+puccini that will soon no longer have packages on it.
+
+Status (2009-05-02):
+
+We probably still eventually want to move to a more cenralized setup for all
+the low-traffic leaf-sites, but momentum on the Big Mail Setup Change seems
+to have pretty much died.  Since Stephen put quite a lot of work into making
+our exim setup more readable, maintainable and we are using the same config now
+everywhere, at least some of the reasons for this proposal are no longer valid.
+It still might make sense to eventually move @debian.org mail from master to a new
+system but we don't need 4 dedicated hosts for that, probably.  (weasel)
+
+== new bugs.d.o ==
+
+Currently bugs runs on a single DL385g1 system which cannot keep up with the
+load that the BTS causes.
+
+Owner@bugs would like to split the BTS accross multiple hosts: two for incoming
+email and spam filtering (would not be required if we had the setup mentioned
+above), one master, and at least two user-facing web servers.
+
+Requirements (assuming the above mentioned mail system is in place, else add
+two mail servers):
+
+* two systems with fast disks (we don't need that much storage, some 200 gigs
+  should suffice easily for a while - say 4x140 gig raid10), some ram for
+  caching (say 16g?), and the CPU to handle the scripts (if we can get two quad
+  cores per box that would be great).
+* one master that processes incoming email, changing bugs as required, and
+  pushes the changes to the web facing servers.
+
+Proposers:
+
+* Don Armstrong
+
+If the snapshot hosts go through we might be able to put the bugs front end
+webservers on them too. Probably a question of load but it can't hardly be
+worse than rietz at the moment.
+
+Status (2009-05-04):
+
+We were quite successful in using other hosts as bugs web mirrors (even if
+right now we aren't running any due to other hardware failing), so that is
+a more or less solved problem.  We also intent to move bugs-master to a kvm
+domain at ubc/ece once the blade there is fixed.  And we can probably move
+incoming MX to a blade instance in darmstadt and another one at the same
+place as new bugs-master will be if the bugs folks still want that.
+
+== new ftp-master ==
+
+ftp-master's hardware is becoming old and warranty is running out (we keep extending it, but that's not for free either).
+
+We probably should look into getting a new machine somewhere in the US.  Apart
+from recent CPUs, reasonable amount of ram (16-32g?) and the usual management
+fu primary requirement is reliable storage.  We probably should look at some
+raid6, either internal or external for the master copy of the archive in the range
+of 2-4T (is that right, ftp folks?).  Additionally some faster internal storage
+could be useful for the database part of the ftp archive (4 disks raid10?).
+
+Status (2010-05-20):
+
+HP DL380 G6 machine in place at CS Dept. Brown University. In setup

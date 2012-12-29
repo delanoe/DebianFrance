@@ -1,0 +1,33 @@
+== Add a guest account to ud-ldap ==
+
+=== add to guest keyring ===
+
+at home:
+
+{{{
+	cd projects/debian/d-a/guest-keyring
+}}}
+
+or whereever you keep the checkout.  Then
+{{{
+	git pull &&
+	echo -n "New user's key fingerprint: " &&
+	read fingerprint &&
+	./add-key "`echo $fingerprint | tr -d ' '`" &&
+	git add debian-guest/add-"`echo $fingerprint | tr -d ' ' | cut -b 25-`" &&
+	git add debian-guest/index debian-guest/index.gpg &&
+	git ci &&
+	git push
+}}}
+
+=== add to ldap ===
+
+Once that is done, to to db-master (aka draghi) and add the account:
+
+{{{
+	ud-useradd -g
+}}}
+
+* note the -g, this is for guest accounts (doesn't prompt for -private etc.)
+* enter fingerprint, account name, [fml] name and forwarding address.
+* enter expiry date and hosts to allow access to, per the request.

@@ -1,0 +1,41 @@
+Chroot Install Request Guidelines
+=================================
+
+<small>(stored here for reference,
+[original announcement is available](http://lists.debian.org/debian-devel-announce/2010/05/msg00002.html))</small>
+
+In order to make dealing with install requests easier for us please
+observe the following guidelines:
+
+1. Install requests should be directed to `debian-admin@lists.debian.org` (and
+  only there) and the subject should be formed as following:
+
+        Subject: [b-d][$arch|$machine] foobar ($chroot)
+
+ Please start all mails concerning porting chroots with the [b-d] (short for
+ build-depends) tag.
+
+ Either choose [$arch] (eg. hppa) or a specific [$machine] (eg. paer) and tell
+ us which package's build dependencies should be installed.
+
+ If you omit $chroot we will assume you meant sid/unstable.
+
+ So build-deps for openoffice.org on smetana in the lenny chroot would look
+ like this:
+
+        Subject: [b-d][smetana] openoffice.org (lenny)
+
+ This kind of subject tagging will make it easier for us to quickly classify
+ mail in the admin mailbox, allowing us to sort it into heaps that DSA has to
+ handle and into requests that our helpers can most likely deal with.
+
+2. Please refrain giving us a long list of packages to install if possible.
+ That is, if a simple `apt-get build-dep $foo` will satisfy your request then
+ all we require is the value of $foo.
+
+ If however the source package isn't yet listed in the chroot's Sources· file
+ (because it's new or in experimental for instance) that won't be possible.  In
+ that case you will have to provide a list of packages for us to install.
+ Please cut it down so that it is copy/pastable to an apt-get install command
+ line, i.e. do not include any `foo | bar` constructs or version constraints
+ (>= 2.71828).

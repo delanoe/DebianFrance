@@ -1,0 +1,17 @@
+== sudo passwords ==
+
+Some groups can use sudo on different debian.org systems to access
+the group's role account user or to do other stuff.
+
+Most of these require the use of a sudo-password that is different
+from the standard ldap/unix password.
+
+To set it, log into https://db.debian.org/ with your ldap credentials, set the
+new sudo-password (which needs to be different from the ldap password),
+optionally limiting it to only one host and confirm the change in signed mail
+to db.d.o as instructed.
+
+New passwords are synced in the normal fashion, so expect delays of up to 30
+minutes.
+
+To find out to which, if any, commands you have access to run {{{sudo -l}}}.

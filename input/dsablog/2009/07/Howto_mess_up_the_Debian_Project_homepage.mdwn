@@ -1,0 +1,22 @@
+[[!meta author="Martin Zobel-Helas"]]
+
+I [recently](http://dsa.debian.org/dsablog/2009/06/Setting_up_GeoDNS_for_security.debian.org/)
+blogged about the GeoDNS setup we plan for
+[security.debian.org](http://security.debian.org).  Even though all DSA
+team members agree that the GeoDNS setup for security.debian.org should
+come alive as soon as possible, we still fear to break an important
+service like security.d.o.
+
+Yesterday I decided without further ado to float a trial balloon and
+converted DNS entries for [the Debian Project homepage](http://www.debian.org)
+to our GeoDNS setup. While doing so, we found out that some part of our
+automatic deployment scripts still need to be adjusted to serve more
+than one subdomain of the project.
+
+That setup is live for about eighteen hours now, and the project
+homepage now resolves it IPs via GeoDNS. For now, we are using senfl.d.o for
+Northern America, www.de.debian.org and www.debian.at for Europe and
+klecker.d.o for the rest of the world. From what I can see from GeoDNS
+logs, it seems to work fine, and the load stays reasonably low, so
+after a short test period we might add additional services like
+security.debian.org to GeoDNS.

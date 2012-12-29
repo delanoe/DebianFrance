@@ -1,0 +1,100 @@
+= Export iSCSI with gustini =
+This document describes how to add new new volumes on gustini and add them into the OS.
+
+== via Web-Frontend ==
+{{{
+* Log into gustini via webfrontend
+* Manage
+  + Volume Management
+    - add volume 
+      add volume size and name but leave LUN blank (NONE)
+    - volume mapping
+      find the next free scsi-lun
+      * run "multipathd -k" on dijkstra
+        + show topology
+	geo2-boot (3600c0ff000d5f6bde2d4cf4901000000) dm-7 HP      ,MSA2012i      
+	[size=245M][features=0][hwhandler=0]
+	\_ round-robin 0 [prio=0][active]
+	 \_ 1:0:0:1 sda 8:0   [active][ready]
+	 \_ 0:0:0:1 sdb 8:16  [active][ready]
+                  ^ that is the LUN
+      find the next unused one and map it
+  + on dijkstra: rescan the iscsi bus
+    iscsiadm -m node --targetname "iqn.1986-03.com.hp:storage.msa2012i.0834d5ecda.a" --rescan
+
+  + on dijkstra: add aliases to the wwids (show topology)
+  + on dijkstra: /etc/init.d/multipath-tools reload
+}}}
+
+== via telnet interface ==
+{{{
+* Log into gustini via telnet
+* create a new volume (eg berlioz-boot) on vdisk giustini-vdisk-1:
+  + create volume vdisk giustini-vdisk-1 size 256MB berlioz-boot
+  (there is a 'help create volume' command with lots of informations)
+* find the next free LUN numbers on traetta:
+  + show host-maps traetta
+* map the new volume to traetta.debian.org, LUN 12
+  + map volume berlioz-boot lun 12 host traetta access rw
+  (again, there is a 'help map volume' command with lots of informations)
+
+* Run 'show host-maps $host' again, then, on the host, run:
+	convert_sn() {
+	  local sn a b c d
+	  sn="$1"
+	  a="${sn%??????????????????????????}"; sn="${sn#??????}"
+	  b="${sn%????????????????????}"; sn="${sn#??????}"
+	  c="${sn%??????????????}"; sn="${sn#??????}"
+	  d="$sn"
+
+	  if [ "${c#0000}" = "$c" ]; then
+	    echo >&2 "sn has unexpected value ($1: $a - $b - $c - $d)"
+	    return 1
+	  fi
+
+	  echo "36${a}000${b}${c#0000}${d}"
+	  return 0
+	}
+
+	parse_volume() {
+	  host=`hostname`
+	  echo "Paste appropriate 'show host-maps $host' output line:"
+	  read name sn id lun access channels
+
+	  if [ "$access" != "rw" ]; then
+	    echo >&2 "Do not have rw access"
+	    return 1
+	  fi
+
+	  if [ "$(echo -n "$sn" | wc -c)" != "32" ]; then
+	    echo >&2 "Unexpected sn length in '$sn' (wanted 32 chars)"
+	    return 1
+	  fi
+
+	  wwid=$(convert_sn "$sn")
+
+	  if [ -z "$wwid" ]; then
+	    return 1
+	  fi
+
+	  echo ""
+	  echo "  multipath {"
+	  echo "    wwid $wwid"
+	  echo "    alias $name"
+	  echo "  }"
+	  echo ""
+
+	  mp="$(multipath -ll $wwid)"
+	  if [ -z "$mp" ]; then
+	    echo >&2 "Warning: multipath does not know about $wwid"
+	    return 1
+	  fi
+
+	  if ! echo "$mp" | grep -q ":$lun "; then
+	    echo >&2 "Warning: Are you sure $wwid is lun $lun?  multipath -ll disagrees"
+	    return 1
+	  fi
+	}
+
+	parse_volume
+}}}

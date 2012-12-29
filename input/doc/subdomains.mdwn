@@ -1,0 +1,62 @@
+Facilities offered to teams with dedicated debian.org subdomains
+================================================================
+
+Various teams have dedicated subdomains below debian.org (e.g
+release.debian.org, qa.debian.org, etc.). Associated to it,
+there's usually a website and e-mail addresses. The corresponding
+files are always in `/srv/foo.debian.org/` on the host allocated
+to the service by the DSA team.
+
+Website 
+-------
+
+The Apache virtual host configuration usually resides in
+`/srv/foo.debian.org/apache.conf`. After having changed the configuration,
+you should be able to reload apache with
+`sudo /usr/sbin/apache2-vhost-update` (provided that you have correctly
+configured a sudo password for the corresponding host).
+
+Virtual Domain Mail Settings
+----------------------------
+
+The configuration of the mail service usually resides in
+`/srv/foo.debian.org/mail/`.
+
+The following files enable you to create various email addresses:
+
+* __aliases__: just like `/etc/aliases`, you can create e-mail addresses that
+  forward the messages to one or more recipients.
+* __.forward-*__: qmail like forward files where `.forward-bar` defines how
+  emails sent to bar@foo.debian.org are handled. It can be used to redirect
+  mails to programs (eg. `|/srv/foo.debian.org/bin/processmail.pl`) or
+  to mailboxes (eg. `/srv/foo.debian.org/mail/archive/bar`). Just put
+  each destination on its own line.
+* __.forward-default__: like above, except it handles all the e-mail addresses
+  that are not covered by an alias or another .forward-* file.
+
+There are also various files that can be used to control the
+antispam measures of each email address:
+
+* **callout_users**: a simple list of local parts (before the @) that should
+  have callout sender verification applied.
+* **grey_users**: a simple list of local parts that should have
+  greylisting applied.
+* **neversenders**: a simple list of local parts (of the virtual domain) that
+  should never appear as senders of mails.
+* **whitelist**: a colon separated list starting with "localpart:" of hosts
+  and IP patterns to whitelist from any antispam measures configured in this
+  directory.
+* **rbllist**: a colon separated list starting with "localpart:" of RBL
+  lists to perform lookups in. Example for owner@foo.debian.org:
+
+        owner: zen.spamhaus.org : safe.dnsbl.sorbs.net
+
+* **rhsbllist**: a colon separated list starting with "localpart:" of RHSBL
+  lists to perform lookups in. This should be in the form of
+  "RHSBL.example/$sender_address_domain". Example for owner@foo.debian.org:
+
+        owner: bogusmx.rfc-ignorant.org/$sender_address_domain : nomail.rhsbl.sorbs.net/$sender_address_domain
+
+You can find examples of the last two files on any debian.org system
+in /var/lib/misc/thishost as mail-rbl and mail-rhsbl.
+

@@ -1,0 +1,447 @@
+
+/*
+*
+* 	- Nom: Theme Wiki NanoBlogger Francophone Gris Clair
+* 	- Description : Une page avec un bandeau superieur pour le titre, un bandeau inferieur pour les informations 
+* 	et la modification de la page.
+* 	Contenu interieur auto adaptable.
+*	- Auteur : Blankoworld
+*
+*/
+
+body, html {
+	height: 100%;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	background-color: white;
+	color: black;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+}
+
+h1 {
+	width: 95%;
+	margin-left: 1%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	font-size: 160%;
+}
+
+h2 {
+	width: 90%;
+	margin-left: 2%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	border-left: medium solid #BF1238;
+	font-size: 150%;
+}
+
+h3 {
+	width: 85%;
+	margin-left: 3%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	border-left: medium solid #BF1238;
+	font-size: 140%;
+}
+
+h4 {
+	width: 80%;
+	margin-left: 4%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	border-left: medium solid #BF1238;
+	font-size: 130%;
+}
+
+h5 {
+	width: 75%;
+	margin-left: 5%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	border-left: medium solid #BF1238;
+	font-size: 120%;
+}
+
+h6 {
+	width: 70%;
+	margin-left: 6%;
+	padding: 0 0 0 1%;
+	border-bottom: medium solid #BF1238;
+	border-left: medium solid #BF1238;
+	font-size: 110%;
+}
+
+pre {
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: auto;
+	color: black;
+	font-weight: normal;
+	background-color:#eeeeee;
+	padding:2mm;
+	border:2px solid #999999;
+	border-right:1px solid #cccccc;
+	border-bottom:1px solid #cccccc;
+}
+
+code {
+}
+
+a {
+	color: black; 
+	text-decoration: underline;
+}
+
+a:active {
+	color: black;
+	border: thin inset gray;
+}
+
+a:visited {
+	color: black; 
+	text-decoration: underline;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+div#pageheader {
+	height: 60px;
+	width: 100%;
+}
+
+div#pageheader span {
+	position: relative;
+	left: 26px;
+	color: black;
+	font-weight: bold;
+	font-size: 200%;
+}
+
+div#pageheader form {
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	top: 1%;
+	right: 1%;
+}
+
+div#pageheader form input {
+	border: medium solid black;
+	background-color: white;
+	color: black;
+	font-weight: bold;
+	text-align: left;
+	background-image: url(/demo/ikiwiki/contraste/htdocs/wikiicons/search-bg.gif);
+	background-repeat: no-repeat;
+	background-position: top right;
+}
+
+div.header {
+	position: absolute;
+	height: 20px;
+	width: 100%;
+	padding: 0;
+	top: 60px;
+	left: 0;
+	line-height: 20px;
+	font-size: 14px;
+}
+
+div.header span {
+	position: relative;
+	top: 10px;
+	left: 35px;
+	color: black;
+}
+
+div.header a {
+	color: black;
+	text-decoration: none;
+}
+
+div.header a:hover {
+	text-decoration: underline;
+}
+
+div#sidebar {
+	position: absolute;
+	height: 28px;
+	width: 100%;
+	top: 80px;
+	left: 0;
+	padding: 0;
+	margin: 0;
+	background-color: #999999;
+	color: white;
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+}
+
+div#sidebar ul {
+	height: 28px;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	text-align: left;
+	color: white;
+}
+
+div#sidebar ul li {
+	padding: 0;
+	float: left;
+	margin: 0;
+}
+
+div#sidebar ul li:hover {
+}
+
+div#sidebar ul li a {
+	display: block;
+	height: 28px;
+	padding: 0 5px 0 5px;
+	margin: 0;
+	color: white;
+	font-weight: bold;
+	text-decoration: none;
+	border: none;
+	line-height: 28px;
+}
+
+div#sidebar ul li a:links {
+}
+
+div#sidebar ul li a:active {
+}
+
+div#sidebar ul li a:visited {
+}
+
+div#sidebar ul li a:hover {
+	border: none;
+	background-color: black;
+}
+
+div#content {
+	position: relative;
+	height: auto;
+	width: 98%;
+	top: 50px;
+	left: 1%;
+	background-color: white;
+	color: black;
+	overflow: auto;
+}
+
+div#content p {
+	margin: 10px 15px 0 15px ;
+}
+
+div#content div.toc {
+	width: 85%;
+	margin: 15px auto 15px auto;
+	padding: 5px;
+	background-color: #eeeeee;
+	border: thin dashed black;
+}
+
+div#content div.toc a {
+	color: black;
+	text-decoration: none;
+}
+
+div#content div.toc a:hover {
+	text-decoration: underline;
+}
+
+div#content div.map {
+	width: 85%;
+	margin: 15px auto 15px auto;
+	padding: 5px;
+	border: thin solid black;
+}
+
+div#content div.map a {
+	color: darkblue;
+	text-decoration: none;
+}
+
+div#content div.map a:hover {
+	text-decoration: underline;
+}
+
+div#content div.inlinepage {
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: white;
+	color: black;
+}
+
+div#content div.inlinepage span.header a {
+        color: #BF1238;
+        font-size: 14px;
+        text-align: right;
+}
+div#content div.inlinepage span.header a:visited {
+        color: #BF1238;
+        font-size: 14px;
+        text-align: right;
+}
+div#content div.inlinepage span.header a:hover {
+        color: #BF1238;
+        font-size: 14px;
+        text-align: right;
+}
+
+div#content div.inlinepage span.pagedate {
+}
+
+div#content fieldset {
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div#content div#feedlink {
+	margin: 5px;
+	text-align: right;
+}
+
+div#content form {
+	width: 95%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div#content form input#_submit, * {
+	margin-right: 5px;
+}
+
+div#content form.fb_form {
+	margin: 5px;
+}
+
+div#content form.fb_form input.fb_button {
+	margin: 0 5px 0 0;
+	color: black;
+	background-color: #eeeeee;
+	border: thin solid black;
+	font-weight: bold;
+}
+
+div#content form.fb_form input.fb_button:hover {
+	color: #eeeeee;
+	background-color: black;
+	border-color: #eeeeee;
+}
+
+div#content form.fb_form input.fb_button:active {
+	color: #eeeeee;
+	background-color: black;
+	border: thin inset #eeeeee;
+}
+
+div#content div.header {
+	height: 30px;
+	width: 20%;
+	min-width: 160px;
+	top: 0;
+	left: 0;
+	line-height: 30px;
+	padding-left: 15px;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+div.actions {
+	position: relative;
+	height: auto;
+	width: 100%;
+	top: 50px;
+	left: 0;
+	padding: 0;
+	margin: 0;
+	background-color: #eeeeee;
+	border-top: thin solid black;
+	border-bottom: thin solid black;
+}
+
+div.actions ul {
+	margin: 0;
+	border: none;
+}
+
+div.actions ul li {
+}
+
+div.actions ul li a {
+	color: black;
+	text-decoration: none;
+	border: none;
+}
+
+div.actions ul li a:links {
+}
+
+div.actions ul li a:active {
+}
+
+div.actions ul li a:visited {
+}
+
+div.actions ul li a:hover {
+	border-bottom: medium solid black;
+}
+
+div#footer {
+	position: relative;
+	width: 100%;
+	height: auto;
+	margin: 0;
+	padding: 0;
+	top: 50px;
+	left: 0;
+}
+
+div#footer div#pageinfo {
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+
+
+div#footer div#pageinfo div#backlinks {
+	width: auto;
+	margin: 0;
+	padding: 0 0 0 5px;
+	background-color: #eeeeee;
+}
+
+div#footer div#pageinfo div.tags {
+	width: auto;
+	margin: 0;
+	padding: 0 0 0 5px;
+	background-color: #eeeeee;
+}
+
+div#footer div#pageinfo div.pagelicense {
+	width: 100%;
+	margin: 0;
+	padding-top: 2px;
+	text-align: right;
+	float: right;
+}
+
+div#footer div#pageinfo div.pagedate {
+	width: 100%;
+	margin: 0;
+	text-align: center;
+	font-weight: bold;
+}
+
+

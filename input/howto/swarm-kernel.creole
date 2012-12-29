@@ -1,0 +1,13 @@
+== Swarm Kernels ==
+
+Aurelien Jarno provided a patch to build kernels for our swarm boxes.
+
+Here are instructions to build a 2.6.32 mipsel kernel. This can be
+easily adapted to other versions and/or mips.
+
+* tar -xvjf linux-2.6.32.tar.bz2
+* cd linux-2.6.32/
+* cat ../[[swarm_ide.2.6.31.patch|swarm_ide.2.6.31.patch]] | patch -p1
+* cp ../config-2.6.32-mipsel-swarm .config
+* fakeroot make-kpkg --append-to-version "-mipsel-swarm" --revision 1
+* kernel_image

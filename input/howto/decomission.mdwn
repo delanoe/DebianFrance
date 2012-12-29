@@ -1,0 +1,24 @@
+# Decomissioning hosts
+
+ * Get rid of any services running on the host.
+ * Optional, shut down the machine, then wait a month
+ * Zero disks
+
+    badblocks -v -s -p 5 -w -f DEVICE_GOES_HERE
+
+ * Revoke puppet certificate
+
+   * on handel: puppetca clean $HOST
+   * reinit samhain on handel
+
+ * Remove from LDAP
+   * rerun puppet on beethoven / the backup host
+   * reinit samhain on beethoven
+ * Remove from Nagios
+ * Remove any references from puppet configuration
+ * Remove references to the host from DNS files, including reverse DNS
+ * Get rid of the HW (tell the hoster to get rid of it or other as appropriate)
+
+Three months after decomissioning:
+
+ * Remove backups

@@ -1,0 +1,18 @@
+= Small Howto for porter chroot maintainers =
+
+== upgrading chroots ==
+* sudo /usr/sbin/upgrade-porter-chroots
+
+  This "apt-get update"s and "apt-get dist-upgrade"s all porter chroots on the porter box.
+
+== installing packages in chroots == 
+* sudo /usr/bin/apt-in-chroot
+
+  This small script will let you run apt inside the chroot, to install
+  packages within the chroot. It has a limited command-set of allowed
+  apt-commands. Running it without any commands it will give you the
+  usage output. 
+
+== best practice ==
+If you handled install requests, please Cc the debian-admin@l.d.o list
+when you reply so we know which requests are still pending.

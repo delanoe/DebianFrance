@@ -1,0 +1,52 @@
+= Poneys =
+
+== move all mail config into ldap ==
+
+Everything.
+
+* user mail forwards, mail user +extension forwards, mail user +extension pipes, all of it.
+* service domain aliases files
+* service domains whitelists/blacklists/neverusers/RBLs
+
+== puppet poneys ==
+
+* It's all perfect now
+
+== ud-ldap ==
+* Non-DD accounts:
+** new object classes? Something to differentiate
+** Would like to always add NM/DM/etc
+** Possibly porter box access for NM/DM ?
+
+* ud-cruft:
+** Clean up old expired entries
+
+* scale ud-generate:
+** ldap replication?
+
+* Security:
+** LDAP query interface read-only with hidden master
+** Privileged modify operations should only be allowed from lo.
+
+* Code base:
+** Could we have one, please?
+
+== mail handling ==
+* move @d.o to MXes (different source IP to avoid RBL for important mail?)
+
+== DSA trainees ==
+* root everywhere, no authority to speak for team
+
+== Web auth ==
+* SSO for web apps (nagios, rt, wiki, etc)
+* Tied to ud-ldap (but not LDAP password, dammit!)
+
+== Munin replacement ==
+* Something that is scriptable and scales
+
+== Nagios config ==
+* Way to have per user views.  Doable with contacts, just needs to be done
+* Way to test IPv6, without duplicating all of our config
+
+== DNS/SSHFP ==
+* It'd be nice if service names like db.d.o had sshfp records in DNS.  This is tricky because some of the purpose service names are CNAMEs, but not all.

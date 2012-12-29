@@ -1,0 +1,31 @@
+== Exim Mail PKI Infrastructure ==
+
+=== Overview ===
+
+handel:/srv/puppet/ca has a Makefile and a set of scripts that gets run
+nightly (or @daily in cron speak).  These scripts regenerate any expiring
+certs, remove any certs for machines that have gone away, update the crl,
+and build certs for new machines.
+
+There is also a facility for building 'client certs' - these are meant for
+things like handing out user certs for mail relay if we ever decide we want
+such a feature.  Since I wasn't convinced we did, I left the list empty but
+included the facility.
+
+=== Adding a new host ===
+
+Add the machine to ud-ldap as usual, and wait for ud-replicate to update
+the list of debianhosts (or force it - up to you).  Then run
+
+{{{
+sudo -u puppet make -C /srv/puppet.debian.org/ca install
+}}}
+
+This will create and install the cert into the correct puppet directory for
+puppet to serve the files out to the new machine.
+
+=== Caveat ===
+
+This is meant to be a completely automated system, which means very little
+auditing of it happens.  Do not use certs from this CA for anything more
+important than mail relaying.

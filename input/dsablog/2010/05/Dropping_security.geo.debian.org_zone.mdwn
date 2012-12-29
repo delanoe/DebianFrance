@@ -1,0 +1,28 @@
+[[!meta author="Martin Zobel-Helas"]]
+
+While setting up GeoDNS for parts of the debian.org zone, we set up a
+new subzone <code>security.geo.debian.org.</code> This was mainly due to
+the fact we didn't want to mess up the existing zone while experimenting
+with GeoDNS.
+
+Now that our GeoDNS setup has been working for more than half a year
+without any problems, we will drop this zone.
+
+We will do that in two phases.
+
+## Phase 1 
+Beginning on July 1st, we will redirect all requests to
+<code>security.geo.debian.org</code> to a static webpage indicating that
+this subzone is deprecated and should not be used any more. If you
+still have security.geo.debian.org in your apt sources.list, updates
+will fail.
+ 
+## Phase 2
+On August 1st, we will stop serving the subzone
+<code>security.geo.debian.org</code> from our DNS servers.
+
+## Conclusion
+In case you use a <code>security.geo.debian.org</code> entry in your
+<code>/etc/apt/sources.list,</code> now is the best time to change that
+entry to <code>security.debian.org</code>. Both zones currently serve
+the same content.

@@ -1,0 +1,18 @@
+HP iLO systems do https.
+
+we have our own ilo-CA for them.  To create a new cert, fetch the
+CSR, then use the sign-modified-csr script in the CA-ilo dir on our CA host.
+(currently db.debian.org:/srv/ca.debian.org/CA-ilo)  The CA password is in
+dsa-passwords in the ca file.
+
+If we have a complete management network, add the hostname from that to
+the cert also, for instance gluck-ilo.debprivate-ftcollins.debian.org.  If
+the iLO has a public internet hostname or even just an IP address that we
+sometimes use to access it, add that too.
+
+There are also two scripts that let you fetch CSRs from the iLO and push
+a cert to the iLO without going through the web interface.  You can find
+them next to the sign-modified-csr in the dsa-misc git repository, or
+on the CA host.
+
+weasel, Fri,  3 Oct 2008 12:16:08 +0200

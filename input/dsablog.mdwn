@@ -1,0 +1,2 @@
+[[!meta  title="Debian System Administrators' Blog"]]
+[[!inline pages="dsablog/* and !*/Discussion" show="10" rootpage="blog"]]

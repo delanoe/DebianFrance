@@ -1,0 +1,67 @@
+= Guest Access to porter machines =
+
+People who are not DDs but are working on software in Debian are can request
+access to porter machines for short term (1-2 months) in order to resolve port
+issues and the like.
+
+The final decision about account creation remains with DSA.
+
+== DMs/NMs ==
+
+DMs (i.e. people who have their key in the debian-maintainers keyring) or
+people already in the NM process may route their request through the
+<a href="mailto:nm@debian.org">NM-frontdesk</a>.
+
+The following information should be provided to frontdesk:
+
+* First/Middle/Last-name
+* Preferred username
+* Key **fingerprint** of the PGP key, which needs to be on the keyserver network.  (fingerprint.  Not a keyid.  Not a link to a site that has a key or a keyserver.  A fingerprint.)
+* email address
+* Signed agreement to abide by DMUP (or link to the mailinglist archive of debian-newmaint where that already was done)
+* Machine(s)/Architecture(s) to which access is needed
+* Short rationale as to //why// access is needed
+
+A member of frontdesk will verify the information for correctness, and create a
+ticket in RT (signed by the frontdesk member) asking DSA to add the new account
+to LDAP.
+
+== non-DMs ==
+
+People who are not yet DMs or NMs will need to find a DD who is willing
+to sponsor their request.  People requesting access should already have
+a track record of working on Debian for some time.
+
+The guest applicant should supply several details (listed below) to this DD,
+and the DD will sign this (clear signed, not PGP mime) and open a ticket
+in RT (mail to admin@rt.d.o, put 'Debian RT' somewhere in the subject -
+see <a href="http://wiki.debian.org/rt.debian.org">wiki.d.o</a> for more info).
+
+This signing and resending is a sponsorship by the DD that the guest
+account should be granted access to Debian resources, and should be
+regarded as such.
+
+=== Information guest needs to supply to sponsoring DD ===
+
+* First/Middle/Last-name
+* Preferred username
+* Key **fingerprint** of the PGP key, which needs to be on the keyserver network.  (fingerprint.  Not a keyid.  Not a link to a site that has a key or a keyserver.  A fingerprint.)
+* email address
+* Signed agreement to abide by DMUP
+* Machine(s)/Architecture(s) to which access is needed
+* Short rationale as to //why// access is needed
+
+=== Information sponsoring DD needs to supply to DSA ===
+
+* Signed email containing above information
+
+
+== Expired Accounts ==
+
+Once an account has expired the user will no longer be able to log into
+debian machines.  If access is required again creating a ticket in RT should
+suffice to get it re-activated (The request should be pgp signed).
+
+Similarly, should access to other hosts become necessary a ticket in RT
+can be opened.
+

@@ -1,0 +1,57 @@
+diff --git a/arch/mips/include/asm/cacheflush.h b/arch/mips/include/asm/cacheflush.h
+index 03b1d69..d32f12a 100644
+--- a/arch/mips/include/asm/cacheflush.h
++++ b/arch/mips/include/asm/cacheflush.h
+@@ -37,6 +37,7 @@ extern void (*flush_cache_range)(struct vm_area_struct *vma,
+ 	unsigned long start, unsigned long end);
+ extern void (*flush_cache_page)(struct vm_area_struct *vma, unsigned long page, unsigned long pfn);
+ extern void __flush_dcache_page(struct page *page);
++extern void __flush_icache_page(struct vm_area_struct *vma, struct page *page);
+ 
+ static inline void flush_dcache_page(struct page *page)
+ {
+@@ -57,11 +58,6 @@ static inline void flush_anon_page(struct vm_area_struct *vma,
+ 		__flush_anon_page(page, vmaddr);
+ }
+ 
+-static inline void flush_icache_page(struct vm_area_struct *vma,
+-	struct page *page)
+-{
+-}
+-
+ extern void (*flush_icache_range)(unsigned long start, unsigned long end);
+ extern void (*local_flush_icache_range)(unsigned long start, unsigned long end);
+ 
+@@ -94,6 +90,13 @@ extern void (*flush_icache_all)(void);
+ extern void (*local_flush_data_cache_page)(void * addr);
+ extern void (*flush_data_cache_page)(unsigned long addr);
+ 
++static inline void flush_icache_page(struct vm_area_struct *vma,
++	struct page *page)
++{
++        __flush_icache_page(vma, page);
++}
++
++
+ /*
+  * This flag is used to indicate that the page pointed to by a pte
+  * is dirty and requires cleaning before returning it to the user.
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index 694d51f..9214d6b 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -95,6 +95,14 @@ void __flush_dcache_page(struct page *page)
+ 
+ EXPORT_SYMBOL(__flush_dcache_page);
+ 
++void __flush_icache_page(struct vm_area_struct *vma, struct page *page)
++{
++	if (vma->vm_flags & VM_EXEC)
++		flush_icache_range((unsigned long) page_address(page), PAGE_SIZE);
++}
++
++EXPORT_SYMBOL(__flush_icache_page);
++
+ void __flush_anon_page(struct page *page, unsigned long vmaddr)
+ {
+ 	unsigned long addr = (unsigned long) page_address(page);

@@ -1,0 +1,69 @@
+# Puppet infrastructure
+
+handel.debian.org is our current puppetmaster.  Currently, it handles
+configuration of samhain, munin, apt, and exim (although more to come -
+this list is likely to get out of date quickly).
+
+To set up a new host to be a puppet client, do the following:
+
+Make sure you have set up the IP address for the new machine in ud-ldap.
+After that run puppet on puppetmaster once, so the ferm config get
+adjusted.
+
+        : __handel__ && puppetd -t --environment=production
+
+        : ::client:: && me=$(hostname -f) && [ "$me" != "${me%debian.org}" ] && apt-get update &&
+                apt-get install --no-install-recommends puppet libaugeas-ruby1.8 augeas-lenses lsb-release &&
+                /etc/init.d/puppet stop &&
+                (puppetd -t || true ) &&
+                cd /var/lib/puppet/ssl/certificate_requests &&
+                echo sha256sum output: && echo &&
+                sha256sum $me.pem &&
+                echo && echo && cd /
+
+This will not overwrite anything yet, since handel has not signed the
+client cert.  Now is the time to abort if you are getting cold feet.
+
+Compare incoming csr request:
+on handel, paste the sha256output::
+
+        : __handel__ && echo "paste sha256sum output now:" &&
+                read sha256 filename &&
+                cd /var/lib/puppet/ssl/ca/requests &&
+                ( [ -e $filename ] || (echo "$filename does not exist."; exit 1) ) &&
+                echo -e "$sha256  $filename" | sha256sum -c &&
+                puppetca --sign $(basename "$filename" .pem) &&
+                echo && echo && echo &&
+                echo 'cat > /var/lib/puppet/ssl/certs/ca.pem << EOF ' &&
+                cat /var/lib/puppet/ssl/certs/ca.pem &&
+                echo 'EOF' &&
+                echo "cat > /var/lib/puppet/ssl/certs/$filename << EOF " &&
+                cat /var/lib/puppet/ssl/ca/signed/$filename &&
+                echo 'EOF' &&
+                cd /
+
+and execute this on the client.
+
+        : ::client:: copy paste the thing you just created on handel
+
+If this is a busy mail host, you might want to stop exim before proceeding
+although the config files should remain identical before and after.
+
+Then run (this will change the configs in /etc):
+
+        : ::client:: && puppetd -t
+
+This run will start puppet after reconfiguring it, so if you are 
+unhappy with what just happened, you'll need to stop it again to do 
+repair.
+
+Double check apt - the puppet setup usually results in duplicate apt
+sources, since we ship a few under sources.list.d.  Remove any unnecessary
+entries from sources.list.
+
+We ship a samhain config file that includes /lib and /usr/lib.  This will
+almost certainly be different than the config file on the machine, so it
+will result in 1000s of files changed.
+You may need to run samhain update after getting puppet going.
+
+# vim:textwidth=72 sw=8 ts=8 et

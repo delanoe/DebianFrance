@@ -1,0 +1,71 @@
+[[!meta author="Peter Palfrader"]]
+
+We are in the process of deploying
+[DNSSEC](http://www.dnssec.net/),
+the DNS Security Extensions, on the Debian zones.  This means properly
+configured resolvers will be able to verify the authenticity of information
+they receive from the domain name system.
+
+The plan is to introduce DNSSEC in several steps so that we can react
+to issues that arise without breaking everything at once.
+
+We will start with serving signed <code>debian.net</code> and
+<code>debian.com</code> zones.  Assuming nobody complains loudly enough
+the various reverse zones and finally the <code>debian.org</code> zone will
+follow.  Once all our zones are signed we will publish our trust anchors
+in [ISC's DLV Registry](https://www.isc.org/solutions/dlv), again in
+stages.
+
+The various child zones that are handled differently from our normal
+DNS infrastructure
+(<code>mirror.debian.net</code>,
+<code>alioth</code>,
+<code>bugs</code>,
+<code>ftp</code>,
+<code>packages</code>,
+<code>security</code>,
+<code>volatile</code>,
+<code>www</code>)
+will follow at a later date.
+
+We are using bind 9.6 for [NSEC3](http://tools.ietf.org/html/rfc5155) support and
+[our](http://git.debian.org/?p=mirror/Net-DNS-SEC-Maint-Key.git)
+[fork](http://git.debian.org/?p=mirror/Net-DNS-SEC-Maint-Zone.git)
+of RIPE's
+[DNSSEC Key Management Tools](http://www.ripe.net/disi/dnssec_maint_tool/)
+for managing our keys because we believe that it integrates nicely
+with our
+[existing DNS helper scripts](http://git.debian.org/?p=mirror/dns-helpers.git),
+at least until something better becomes available.
+
+We will use NSEC3RSASHA1 with key sizes of 1536 bits for the KSK and
+1152 bits for the ZSK.  Signature validity period will most likely be
+four weeks, with a one week signature publication period
+(cf. [RFC4641: DNSSEC Operational
+Practices](http://tools.ietf.org/html/rfc4641)).
+
+Zone keys rollovers will happen regularly and will not be announced in
+any specific way.  Key signing key rollovers will probably be announced
+on the
+[debian-infrastructure-announce](http://lists.debian.org/debian-infrastructure-announce/)
+list until such time that our zones are reachable from a
+[signed root](http://www.root-dnssec.org/).  KSK rollovers for our own
+child zones (www.d.o et al.), once signed, will not be announced because
+we can just put proper
+[DS records](http://en.wikipedia.org/wiki/List_of_DNS_record_types#DS)
+in the respective parent zone.
+
+Until we announce the first set of trust anchors on the mailinglist the
+keysets present in DNS should be considered experimental.  They can
+be changed at any time, without observing standard rollover practices.
+
+Please direct questions or comments to either the debian-admin or, if
+you want a more public forum, the debian-project list at
+lists.debian.org.
+
+See also:
+
+* [DNSSEC wikipedia page](http://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions),
+* [DNSSEC HOWTO, a tutorial in disguise (Olaf Kolkman, nlnetlabs)](http://www.nlnetlabs.nl/publications/dnssec_howto/index.html).
+
+-- Peter Palfrader

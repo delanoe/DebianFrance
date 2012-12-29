@@ -1,0 +1,26 @@
+== User/permission stuff with pg ==
+
+{{{
+revoke ALL on DATABASE "XXX" from public;
+
+grant CONNECT, CREATE, TEMPORARY on DATABASE "XXX" to "YYY";
+grant CONNECT on DATABASE "XXX" to public;
+grant TEMPORARY on DATABASE "XXX" to guest;
+
+REVOKE ALL ON SCHEMA public from public;
+GRANT USAGE ON SCHEMA public TO public;
+GRANT ALL ON SCHEMA public TO "YYY";
+
+\dn+
+\dp+
+
+select * from pg_database ;
+
+
+
+sudo -u postgres psql "XXX" << EOF
+CREATE LANGUAGE plpgsql;
+EOF
+
+sudo -u postgres psql "XXX" < /usr/share/postgresql/8.3/contrib/debversion.sql
+}}}

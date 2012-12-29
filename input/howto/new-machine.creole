@@ -1,0 +1,109 @@
+== setup/integrate a new machine ==
+
+Note: this has recently been changed to rely more on [[puppet|howto/puppet-setup]].  If stuff breaks fix it.
+
+
+* install ssh if it isn't there already
+{{{
+    apt-get install --no-install-recommends ssh
+}}}
+
+* sane editor
+{{{
+    apt-get install --no-install-recommends vim
+}}}
+
+* sane locales: (make sure there is _no_ locale defined in /etc/environment and /etc/default/locale)
+{{{
+   echo -n > /etc/environment
+   echo -n > /etc/default/locale
+}}}
+
+* make debconf the same on every host: - dialog, - high
+{{{
+    apt-get install --no-install-recommends dialog &&
+    echo "debconf debconf/priority        select high" | debconf-set-selections &&
+    echo "debconf debconf/frontend        select Dialog" | debconf-set-selections
+}}}
+
+* unless we want to keep it:
+{{{
+    dpkg -l postfix | grep '^ii  postfix' && (dpkg --purge postfix && rm /etc/aliases)
+}}}
+
+* on draghi, add the host to the ldap using ud-host.  Set the ssh key and the IP Address attributes.
+
+* run generate, or wait until cron runs it for you.  Update DNS.
+{{{
+    : :: draghi :: && sudo -u sshdist ud-generate && sudo -H ud-replicate && sudo -H puppetd -t
+    : :: orff :: && sudo -H ud-replicate
+}}}
+
+* setup [[puppet|howto/puppet-setup]]  (run the puppet client two or three times until things converge.)
+
+
+* fix nsswitch for ud fu.  (you might have to restart sshd here)
+{{{
+    sed -i -e 's/^passwd:\[[:space:]]\+compat$/passwd:         compat db/;
+              s/^group:\[[:space:]]\+compat$/group:          db compat/;
+              s/^shadow:\[[:space:]]\+compat$/shadow:         compat db/' \
+        /etc/nsswitch.conf
+    (cd / && env -i /etc/init.d/ssh restart)
+}}}
+
+* on the host, run ud-replicate
+{{{
+    echo draghi.debian.org,draghi,db.debian.org,db,82.195.75.106,::ffff:82.195.75.106 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAy1mAS0xIOZH9OrJZf1Wv9qYORv5Z5fmpF0o8Y4IMdS+ZzTjN1Sl8M77jaFTJbumJNs+n2CMcX8CoMemQEPBoRe20a5t3dExPQ3c7FNU0z+WIVFbu/oTTkAWGp5gCDwF3pg2QxUjqYc0X4jpv6pkisyvisij6V/VJ5G1hsIMuKqrCKYyyyiJJytfzSfRrBx2QvB5ZWQxhYeSYDoLDvuF31qUy4TLZ/HR3qZQ1cBrP9dCh5d+GQxdY9LuO6zjlnSyU64GHkyjYt3p03AKG4plD7WHX01bD0DQQ/NOFVwFhOZ63mePyridPuqBMFW39jBf4jSsewV95RE5VbY04+MY4XQ== root@draghi >> /etc/ssh/ssh_known_hosts &&
+    ud-replicate
+}}}
+
+* check if it worked:
+{{{
+    id weasel
+}}}
+
+* install debian.org which brings you shells and much other fun
+{{{
+    apt-get install debian.org debian.org-recommended
+}}}
+
+* On handel, make sure the certs exist for the new host
+{{{
+  : :: handel :: : && sudo -u puppet make -C /srv/puppet.debian.org/ca/ install
+}}}
+
+* run puppet a couple times
+{{{
+    puppetd -t; puppetd -t; puppetd -t; puppetd -t
+}}}
+
+* try to login using your user and ssh key.  you should get a homedir.
+
+* try to become root using sudo.
+
+* make ca-certificates sane:  (choose to *not* trust new certs, and we only want the spi cert activated)
+{{{
+    echo "ca-certificates ca-certificates/trust_new_crts  select no" | debconf-set-selections
+    sed -i -e 's/^[^#!].*/!&/; s#^!spi-inc.org/spi-cacert-2008.crt#spi-inc.org/spi-cacert-2008.crt#' /etc/ca-certificates.conf
+    dpkg-reconfigure ca-certificates
+}}}
+
+* Add debian-admin@debian.org to root in /etc/aliases
+{{{
+  if ! egrep '^root:' /etc/aliases > /dev/null; then
+    echo "root: debian-admin@debian.org" >> /etc/aliases
+  elif ! egrep '^root:.*debian-admin@debian.org' /etc/aliases > /dev/null; then
+    sed -i -e 's/^root: .*/&, debian-admin@debian.org/' /etc/aliases
+  fi
+  newaliases
+}}}
+
+* if it is a HP Proliant, or has other management fu, read [[howto/ilo-https]]
+
+* edit dedication into in $DSA-PUPPET/modules/debian-org/misc/local.yaml
+
+* Add host to smarthost machines in $DSA-PUPPET/modules/debian-org/misc/local.yaml (if so desired).  Set MX in ud-ldap.
+
+* add to nagios
+
+-- weasel, Wed, 04 Jun 2008 20:52:56 +0200

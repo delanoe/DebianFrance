@@ -1,0 +1,140 @@
+
+== HOWTO set up a porting dchroot on a debian.org machine ==
+
+This example is for setting up a $DIST dchroot on paer.debian.org,
+adjust accordingly.
+
+Do the following as root:
+
+{{{
+  echo -n 'Dist: ' && read DIST && export DIST &&
+  echo -n 'Mirror: ' && read MIRROR && export MIRROR 
+}}}
+
+
+* create the chroot
+{{{
+  cd /srv/chroot &&
+  mkdir $DIST &&
+  debootstrap --keyring /usr/share/keyrings/debian-archive-keyring.gpg --include="apt" --variant=buildd $DIST ./$DIST http://$MIRROR/debian &&
+  cp /etc/hosts $DIST/etc/
+}}} 
+
+* enter the chroot and create the chroot tag:
+{{{
+chroot $DIST
+echo $DIST > /etc/debian_chroot
+
+# change root's .bashrc:
+ grep -q debian.chroot /etc/bash.bashrc || patch /root/.bashrc << 'EOF'
+@@ -3,2 +3,6 @@
+ export PS1='\h:\w\$ '
++if [ -e /etc/debian_chroot ]; then
++       debian_chroot=$(cat /etc/debian_chroot)
++       PS1="[$debian_chroot] $PS1"
++fi
+ umask 022
+EOF
+#
+#*)
+ echo 'Acquire::PDiffs "false";' > /etc/apt/apt.conf.d/local-pdiff
+ echo 'APT::Install-Recommends 0;' > /etc/apt/apt.conf.d/local-recommends
+ echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/local-no-lang
+# # not sure this one's a good idea, -- weasel 20080829
+# ##echo 'DPkg::Post-Invoke { "(sleep 1; apt-get clean) &"; };' > /etc/apt/apt.conf.d/local-cleanup
+#
+#*) deploy a policy-rc.d script:
+ apt-get update &&
+ apt-get install policyrcd-script-zg2 &&
+ cat > /usr/local/sbin/policy-rc.d << EOF &&
+#!/bin/sh
+
+# policy-rc.d script for chroots.
+# Copyright (c) 2007 Peter Palfrader <peter@palfrader.org>
+
+while true; do
+  case "$1" in
+    -*)         shift ;;
+    makedev)    exit 0;;
+    *)
+      echo "Not running services in chroot."
+      exit 101
+      ;;
+  esac
+done
+EOF
+ chmod +x /usr/local/sbin/policy-rc.d
+
+#*) install and setup locales and install libnss-db
+  apt-get install locales-all
+
+#  (if locales-all is not feasible on the machine because of say
+#   disk constraints then install just locales and enable at
+#   least "en_US.UTF-8 UTF-8" and "en_US ISO-8859-1".)
+#
+#*) setup nsswitch.conf to properly use the ldap stuff
+  # [dchroot]: apt-get install libnss-db &&
+  # sed -i -e 's/^passwd:\[[:space:]]\+compat$/passwd:         compat db/;
+  #            s/^group:\[[:space:]]\+compat$/group:          db compat/;
+  #            s/^shadow:\[[:space:]]\+compat$/shadow:         compat db/' \
+  #   /etc/nsswitch.conf
+#
+#
+# *)
+   apt-get install vim fakeroot devscripts gdb zsh dialog tcsh debfoster
+#  edit the sources.list in the chroot and add contrib/non-free to the
+#  primary source, a security updates source, and deb-src entries for both.
+#  It should end up looking something like
+   (
+   echo "deb     http://$MIRROR/debian $DIST main contrib non-free"
+   echo "deb-src http://$MIRROR/debian $DIST main contrib non-free"
+   if [ "$DIST" != "sid" ] ; then
+     echo "deb     http://security.debian.org $DIST/updates main contrib non-free"
+     echo "deb-src http://security.debian.org $DIST/updates main contrib non-free"
+   fi
+   ) > /etc/apt/sources.list
+   apt-get update && apt-get upgrade
+#
+# *)
+  mount -t proc none /proc && debfoster ; umount /proc
+#
+# *)
+#  exit the chroot
+  exit
+}}}
+
+* [dchroot only] edit /etc/fstab on the system root and add entries to mount /proc and /home
+in the chroot, there will be existing ones for the other chroots, just copy and
+adjust. Then mount them (from the system root).
+{{{
+  :e.g:
+  :  proc-etch  /srv/albeniz.debian.org/chroot/etch/proc proc defaults,nosuid,nodev,noexec 0 0
+  :  proc-lenny /srv/albeniz.debian.org/chroot/lenny/proc proc defaults,nosuid,nodev,noexec 0 0
+  :  proc-sid   /srv/albeniz.debian.org/chroot/sid/proc proc defaults,nosuid,nodev,noexec 0 0
+  :
+  :  home /srv/albeniz.debian.org/chroot/etch/home none bind,defaults
+  :  home /srv/albeniz.debian.org/chroot/lenny/home none bind,defaults
+  :  home /srv/albeniz.debian.org/chroot/sid/home none bind,defaults
+  :
+  :  devpts-etch  /srv/albeniz.debian.org/chroot/etch/dev/pts devpts defaults,noexec,nosuid 0 0
+  :  devpts-lenny /srv/albeniz.debian.org/chroot/lenny/dev/pts devpts defaults,noexec,nosuid 0 0
+  :  devpts-sid   /srv/albeniz.debian.org/chroot/sid/dev/pts devpts defaults,noexec,nosuid 0 0
+  :
+  :  shm-etch  /srv/albeniz.debian.org/chroot/etch/dev/shm tmpfs defaults,nosuid,nodev 0 0
+  :  shm-lenny /srv/albeniz.debian.org/chroot/lenny/dev/shm tmpfs defaults,nosuid,nodev 0 0
+  :  shm-sid   /srv/albeniz.debian.org/chroot/sid/dev/shm tmpfs defaults,nosuid,nodev 0 0
+  :
+  :  tmp /srv/albeniz.debian.org/chroot/etch/tmp none bind,defaults
+  :  tmp /srv/albeniz.debian.org/chroot/lenny/tmp none bind,defaults
+  :  tmp /srv/albeniz.debian.org/chroot/sid/tmp none bind,defaults
+}}}
+
+* [schroot] set up /etc/schroot/chroot.d/ correctly.
+  [dchroot]: edit /etc/dchroot.conf in the system root, add an entry for $DIST, and update the stable and testing pointers
+
+* [dchroot]: run ud-replicate so the new chroot is setup (this would happen via cron eventually, this is just to speed things up)
+{{{
+  ud-replicate
+}}}
+
+* as a normal user, test that the new chroot works: "dchroot $DIST" or "schroot $DIST", test that the stable and testing pointers work.

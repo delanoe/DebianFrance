@@ -1,0 +1,22 @@
+[[!if test="enabled(sidebar)" then="""
+[[!sidebar]]
+""" else="""
+[[!inline pages=sidebar raw=yes]]
+"""]]
+
+# Debian France
+
+L'Association Debian France est une association de droit local
+Alsace-Moselle inscrite au Registre des Associations auprès du Tribunal
+d'Instance de Colmar (68, Haut-Rhin) sous les références : Volume 60,
+Folio N° 89 en date du 25/09/2006 (publication légale : Dernières
+Nouvelles d'Alsace N° 229 en date du 29/09/2006).
+
+L'Association Debian France a pour buts le soutien et la promotion du
+Projet Debian en France.
+
+
+
+## Denières nouvelles
+
+[[!inline pages="page(./posts/*) and !*/Discussion" archive=yes feedshow=10 quick=yes]]

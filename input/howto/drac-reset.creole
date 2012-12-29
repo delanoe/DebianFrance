@@ -1,0 +1,56 @@
+= reset drac passwords/settings =
+
+* Get a copy of the {{{drac-stuff}}} directory in root's homedir on grieg,
+rautavaara etc.  It contains {{{racadm}}}, {{{racsvc}}} with needed
+dependencies.
+
+* Communications with the drac from the host goes over a serial device, which
+you need to serialsetup first: To do that run
+{{{
+        sh -x drac-stuff/etc/init.d/racsvc start
+}}}
+it will fail in a few places but it will figure out which ttySXX it is, and it
+will do a sersetup on it.
+
+* Start ravscv using
+{{{
+        LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" drac-stuff/usr/sbin/racsvc  -d /dev/ttyS2
+}}}
+or whatever ttyS it is in this case.  It will need ia32-libs if you are on amd64.
+("File not found" tells you that.)
+
+* get the current config:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm getconfig -p -f drac-config
+}}}
+
+* reset all config:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm racresetcfg
+}}}
+
+* enable dhcp:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm setniccfg -d
+}}}
+
+* or set static addresses:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm setniccfg -s 192.0.2.011 255.255.255.0 192.0.2..1
+}}}
+
+* set a root password (root is user #1 by default):
+{{{
+        # typeset HISTCONTROL=ignoreboth
+        #       LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm config -g cfgUserAdmin -o cfgUserAdminPassword -i 1 "swordfish"
+}}}
+
+* inspect the new config:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm getconfig -p -f drac-config-after
+}}}
+
+* reboot the drac:
+{{{
+        # LD_LIBRARY_PATH="/root/drac-stuff/usr/lib" /root/drac-stuff/usr/sbin/racadm racreset
+}}}

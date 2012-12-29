@@ -1,0 +1,17 @@
+[[!meta author="Martin Zobel-Helas"]]
+
+We are re-purposing raff.debian.org as a new security mirror to be
+shipped to South America. The raff.debian.org most of you have used as
+[buildd.debian.org](http://buildd.debian.org) in the past will cease to exist in the near future.
+
+raff.debian.org will cease acting as a dns server for the debian.org
+zone in a few days, therfore we will add two new hosts, senfl.d.o and
+ravel.d.o.
+
+All other services formerly hosted on raff.d.o should have been already
+moved by now, we just want to encourage those of you who had a login on
+raff, to backup your home directory if you care of the data stored there,
+as we will not move that.
+
+Current plan is to shut down current raff by end of the year (so in about
+7 days).

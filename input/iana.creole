@@ -1,0 +1,76 @@
+= Debian OID hierarchy =
+
+== Abstract ==
+
+For a number of protocols it is necessary to have an IANA enterprise number.
+This document describes how the enterprise number assigned to Debian is used,
+and how to request assignments with the Debian enterprise space.
+
+== Introduction ==
+
+Debian has been assigned private enterprise number 9586 by IANA.
+(The full list of assignments is available at
+&lt;http://www.iana.org/assignments/enterprise-numbers&gt;.)
+This number is used as the base for a hierarchy in the OID space for SNMP and
+X.500/LDAP as well as for other protocols such as RADIUS.
+
+== Requesting enterprise space ==
+
+Packages and projects may request an entry in the Debian enterprise space by
+contacting debian-admin. An application has to have the following information:
+
+* Name of the package or project
+* Contact person and address
+* Type usage (SNMP, X.500/LDAP, RADIUS, etc.)
+* Section of OID space to be used. The OID space is currently divided in two sections:
+ * package: A section for Debian usage
+ * project: A section that is also used outside of Debian
+
+== OID Assignments ==
+
+The root of the OID space is 1.3.6.1.4.1.9586 or iso.org.dod.internet.private.enterprise.Debian.
+
+As of March 2009 this wiki page at http://dsa.debian.org/iana is the
+authoritative source of Debian OID information.
+
+=== enterprise.Debian / 1.3.6.1.4.1.9586 ===
+
+The root of the Debian OID space.
+
+The contact for this section is: Debian-Admin (debian-admin@ldo).
+
+[[!table data="""
+OID | Name | Description
+1   | package | Debian internal use
+100 | project | projects used outside of Debian as well
+"""]]
+
+=== enterprise.Debian.package / 1.3.6.1.4.1.9586.1 ===
+
+Used for packages and projects that are Debian specific and will not be used on
+non-Debian systems.
+
+The contact for this section is: Debian-Admin (debian-admin@ldo).
+
+[[!table data="""
+OID | Name        | Contact              | Description
+1   | sourceforge | Roland Mas &lt;lolando&gt; | LDAP entries for the SourceForge Integrated development project framework
+2   | debconf     | Joey Hess &lt;joeyh&gt;    | LDAP DebConf backend
+"""]]
+
+=== enterprise.Debian.project / 1.3.6.1.4.1.9586.100 ===
+
+Used for projects that are not Debian specific.
+
+The contact for this section is: Debian-Admin (debian-admin@ldo).
+
+
+[[!table data="""
+OID | Name        | Contact              | Description
+  1 | LVM         | Russell Coker &lt;russell@coker.com.au&gt; |  SNMP information for the Logical Volume Manager
+  2 | ScaleMail   | Tommi Virtanen &lt;tv&gt;                  | LDAP for the Scalemail virtual mail domain system
+  3 | gforge      | Roland Mas &lt;lolando&gt;                 | LDAP entries for the GForge development project framework
+  4 | userdir     | debian-admin                               | Debian user directory
+  5 | keepalived  | Vincent Bernat &lt;bernat&gt;              | keepalived, a free VRRP implementation and load balancer
+  6 | tor         | Peter Palfrader &lt;weasel&gt;             | Tor Project - http://www.torproject.org
+"""]]

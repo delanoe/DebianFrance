@@ -1,0 +1,27 @@
+= Open issues with the Debian kFreeBSD Ports =
+
+from a purely DSA perspective.
+
+== Missing packages ==
+
+* stuff depended on by debian.org-recommended (not all might make sense on kFreeBSD - need to figure that one out):
+** ifenslave (does that even make sense?  should we type-handle it away on kfreebsd?)
+** bridge-utils (ditto)
+** vlan (same)
+** iproute
+** traceroute
+** emacs22-nox or emacs22
+** lshw
+** mcelog (useful on kfreebsd?)
+** lsof
+** timeout
+** strace
+
+== Operational ==
+
+puppet runs do not run reliably and often hang.  Might be a ruby bug.
+
+=== Broken Packages ===
+
+* molly-guard (ssh check broken) (<a href="http://bugs.debian.org/548099">#548099</a>)
+

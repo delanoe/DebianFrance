@@ -1,0 +1,39 @@
+# debian.org DNS
+
+For most zones the hidden primary is draghi, with ravel, senfl, klecker
+and orff being the public facing secondaries.
+
+Domain information lives in a git on draghi, and pushing to it will cause
+the zone to be compiled and reloaded automatically.  Repository lives at
+ssh://dns.debian.org/git/domains.git - public read only mirror available
+using http.
+
+Some subdomains (and when I say subdomains, I really only mean www) are
+served by the geodns setup on geo1, 2, and 3.  They have a seperate repo
+ssh://dns.debian.org/git/dsa-geodomains.git and an entirely seperate workflow.
+
+At least it's consistent.
+
+# DNSSEC
+
+Adding DNSSEC KSK and ZSK for zones is done by running
+/srv/dns.debian.org/bin/maintkeydb with the following options:
+
+./bin/maintkeydb create both NSEC3RSASHA1 default your.ip6.arpa
+
+Use RSASHA1 instead of NSEC3RSASHA1 for IPv4 address space.
+
+After that a "; wzf: dnssec = 1" needs to be added to the zone file.
+
+## DLV
+
+In order to publish our trust anchors in the ISC DLV, add
+"; dlv-submit = yes" to the zonefile, then run the dlv-submit-many script
+in /org/dns.debian.org/dlv-sync.
+
+In order to authenticate our control of that zone to ISC you'll have to
+manually add a DLV cookie to the respective zone.  After adding it you either
+need to wait a day or so for ISC to re-check by themselves (re-run the script
+for status information) or trigger a re-check on their website.
+
+Once they have verified the cookie it can be removed from the zone again.

@@ -1,0 +1,263 @@
+== Setup a new kvm domain fast ==
+
+=== guest setup ===
+
+or: how to install Debian.
+
+Define a shell function
+
+{{{
+# set up environment
+setup_env() {
+ echo -n "New hostname: " &&
+ export LC_ALL=C &&
+ read guest &&
+ target="/mnt/target-$guest" &&
+ mirror=`cat /etc/apt/sources.list /etc/apt/sources.list.d/debian.list 2>/dev/null | awk '/^deb.*debian/ {print $2; exit}'` &&
+ vgdefault=`vgdisplay -c | awk -F: '{print $1;exit}' | sed 's/ *//g'` &&
+ echo -n "Volume group? [$vgdefault]: " &&
+ read vg &&
+ if [ "$vg" = "" ]; then vg="$vgdefault"; fi &&
+ echo -n "Use lvm for non-swap partitions? [Y/n] " &&
+ read use_lvm &&
+ if [ "$use_lvm" = "n" ]; then
+   : SAN, as in the msa2012i at ubcece &&
+   : requires that it is already setup &&
+   dev_root="/dev/mapper/$guest-root" &&
+   dev_boot="/dev/mapper/$guest-boot" &&
+   echo "Root device will be $dev_root" &&
+   echo "Boot device will be $dev_boot" &&
+   echo "Make sure they exist already." &&
+   fs=xfs
+ else
+   use_lvm="y" &&
+   dev_root="/dev/mapper/$vg-$guest--root" &&
+   dev_boot="/dev/mapper/$vg-$guest--boot" &&
+   echo "Root device will be $dev_root" &&
+   echo "Boot device will be $dev_boot" &&
+   fs=ext4
+ fi &&
+ if [ "$vg" != "" ]; then
+   dev_swap="/dev/mapper/$vg-$guest--swap"
+ elif [ -d /SWAPFILES ]; then
+   dev_swap=/SWAPFILES/$guest-swap
+ else
+   echo "No idea how to do swap" && false
+ fi &&
+ echo -n "Use a /boot filesystem (strongly recommended)? [Y/n] " &&
+ read use_boot &&
+ echo "Swap device will be $dev_swap" &&
+ echo "fs is $fs"
+ echo "Chosen mirror is $mirror"
+}
+}}}
+
+And run it
+
+{{{
+setup_env
+}}}
+
+Then install base:
+
+The way we lay out the filesystems by default is that we have one 4g /
+filesystem, a swap, and a tiny boot filesystem.  On the host we make
+a new LVM logical volume for each of the three.  Only the LV that will
+take the guest's boot will actually be partitioned - into a single boot
+partition.  That's so we can install grub into the MBR and have the system
+start just like a real system.  Root and swap are put directly onto the
+logical volume, without partitioning it at all.  This makes getting to the
+data from the host easier - no need to run kpartx - and it makes growing
+trivial.
+
+{{{
+#######
+# install base
+
+ apt-get install debootstrap debian-archive-keyring kpartx &&
+ if [ "$use_lvm" = "y" ]; then
+   if [ "$use_boot" != "n" ] ; then
+     lvcreate -L 128m -n "$guest"-boot /dev/"$vg"
+   fi &&
+   lvcreate -L 4g -n "$guest"-root /dev/"$vg"
+ fi &&
+ lvcreate -L 4g -n "$guest"-swap /dev/"$vg" &&
+ : &&
+ if [ "$use_boot" != "n" ] ; then
+   ( echo ',,L,*' | sfdisk -D "$dev_boot" ) &&
+   kpartx -v -a "$dev_boot" &&
+   mkfs."$fs" "$dev_boot"1
+ fi &&
+ mkfs."$fs" "$dev_root" &&
+ mkswap "$dev_swap" &&
+ : &&
+ mkdir -p "$target" &&
+ mount "$dev_root" "$target" &&
+ if [ "$use_boot" != "n" ] ; then
+   mkdir -p "$target/boot" &&
+   mount "$dev_boot"1 "$target/boot"
+ fi &&
+
+ cd "$target" &&
+ debootstrap --variant=minbase --keyring=/usr/share/keyrings/debian-archive-keyring.gpg squeeze . "$mirror"
+}}}
+
+And finalize the setup:
+
+{{{
+#######
+# finish setup
+ echo "$guest" > etc/hostname &&
+ cat > etc/hosts << EOF &&
+127.0.0.1       localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+EOF
+ rm -fv etc/apt/sources.list &&
+ ( ! [ -e /etc/apt/sources.list ] || cp /etc/apt/sources.list etc/apt/sources.list)
+ (cp -v /etc/apt/sources.list.d/* etc/apt/sources.list.d/ || true ) &&
+ ( ! [ -e /etc/apt/preferences ] || cp -v /etc/apt/preferences etc/apt/ ) &&
+ apt-key exportall | chroot . apt-key add - &&
+ chroot . apt-get update &&
+ echo "Apt::Install-Recommends 0;" > etc/apt/apt.conf.d/local-recommends &&
+ chroot . apt-get install -y net-tools iproute ifupdown dialog vim netbase xfsprogs &&
+ cp -av `readlink -f $dev_root` dev/`basename $dev_root` &&
+ DEBIAN_FRONTEND=noninteractive chroot . apt-get install -y grub2 &&
+  cat > etc/kernel-img.conf << EOF &&
+do_symlinks = no
+do_initrd = yes
+EOF
+  if [ "$use_boot" != "n" ] ; then
+    cp -av `readlink -f $dev_boot` dev/`basename $dev_boot` &&
+    cp -av `readlink -f $dev_boot""1` dev/`basename $dev_boot`1 &&
+    chroot . grub-install --modules=part_msdos /dev/`basename $dev_boot` &&
+    # install a kernel image
+    chroot . apt-get install -y linux-image-2.6-amd64 &&
+    sed -i -e 's/^#GRUB_TERMINAL=console/GRUB_TERMINAL=console/' etc/default/grub &&
+    echo "(hd0) /dev/`basename $dev_boot`" > boot/grub/device.map &&
+    chroot . update-grub &&
+    sed -i -e "s#dev/`basename $dev_boot`1#dev/hda1#g" boot/grub/grub.cfg &&
+    rm -v dev/"`basename $dev_boot`" dev/"`basename $dev_boot`1"
+  else
+    echo && echo && echo && echo "Hardly tested, expect this to fail." && echo && echo && echo &&
+    echo "(hd0) /dev/`basename $dev_root`" > boot/grub/device.map &&
+    chroot . grub-install /dev/"`basename $dev_root`" &&
+    # install a kernel image
+    chroot . apt-get install -y linux-image-2.6-amd64 &&
+    sed -i -e 's/^#GRUB_TERMINAL=console/GRUB_TERMINAL=console/' etc/default/grub &&
+    chroot . update-grub
+  fi &&
+  sed -i -e "s#dev/`basename $dev_root`#dev/vda#g" boot/grub/grub.cfg &&
+  rm -v boot/grub/device.map &&
+  rm -v dev/"`basename $dev_root`"
+}}}
+
+And a fstab and a boot loader config
+
+{{{
+ # doesn't work: chroot . update-grub
+ rootuuid=`blkid -s UUID -o value "$dev_root"` &&
+ swapuuid=`blkid -s UUID -o value "$dev_swap"` &&
+ if [ "$fs" = "ext4" ]; then
+   rootopts="errors=remount-ro"
+ else
+   rootopts="defaults"
+ fi
+ cat > etc/fstab << EOF &&
+UUID=$rootuuid    /               $fs    $rootopts 0       1
+UUID=$swapuuid    none            swap    sw              0       0
+EOF
+ if [ "$use_boot" != "n" ] ; then
+    bootuuid=`blkid -s UUID -o value "$dev_boot"1` &&
+    echo "UUID=$bootuuid    /boot           $fs    defaults        0       2" >> etc/fstab
+ fi
+ cat > etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet manual
+  pre-up ip link set up dev \$IFACE
+  post-down ip link set down dev \$IFACE
+EOF
+}}}
+
+Maybe fix/setup networking properly:
+
+{{{
+vi etc/network/interfaces
+}}}
+
+And set a password:
+{{{
+chroot . passwd
+}}}
+
+Set a nameserver config that works once the VM has booted. Later in the process we will install unbound anyway.
+{{{
+cat > etc/resolv.conf << EOF
+nameserver 8.8.8.8
+search debian.org
+EOF
+}}}
+
+And unmount:
+
+{{{
+  cd / &&
+ if [ "$use_boot" != "n" ] ; then
+   umount "$target"/boot &&
+   kpartx -v -d "$dev_boot"
+ fi &&
+ umount "$target" &&
+ rmdir "$target"
+}}}
+
+=== virsh setup ===
+
+Setup a new kvm domain by creating a new file in /etc/dsa-kvm/`hostname/$guest.xml.
+
+* Properly configure hostname
+* Pick a new uuid ({{{uuidgen}}})
+* Setup block devices properly
+* pick a new and unique mac address (on d.o every kvm host has their own mac address space and the last block is changed for the guests, as in {{{..:..:..:..:<host byte>:<guest byte>}}}. )
+* virsh commands:
+** {{{virsh help}}}
+** {{{virsh define foo.xml}}}
+** {{{virsh start foo}}}
+** {{{virsh destroy foo}}}
+** {{{virsh vncdisplay foo}}} (and ssh -L 5900:localhost:<5900+x> $host  and  vnc localhost)
+
+=== post processing ===
+
+Do not forget to set a sane root password before installing ssh in the new kvm domain.
+
+=== when stuff goes wrong ===
+
+To get to the guest data from the host:
+
+{{{
+  setup_env
+ kpartx -v -a "$dev_boot" &&
+ mkdir -p "$target" &&
+ mount "$dev_root" "$target" &&
+ mkdir -p "$target/boot" &&
+ mount "$dev_boot"1 "$target/boot"
+}}}
+
+and once you're done:
+{{{
+ cd / &&
+ umount "$target"/boot &&
+ umount "$target" &&
+ kpartx -v -d "$dev_boot" &&
+ rmdir "$target"
+}}}
+
+Make sure that the filesystem isn't being mounted twice - i.e. never start the guest while the filesystems are mounted, and never mount them while the guest is running.

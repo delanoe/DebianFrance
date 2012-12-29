@@ -1,0 +1,98 @@
+[[!meta author="Martin Zobel-Helas"]]
+
+DSA is currently playing around with a patched version of bind9 (based on a
+patch we received from kernel.org people) to implement GeoDNS for
+security.debian.org. You might have noticed that we currently have a
+round robin list of up to seven hosts in the security.debian.org
+rotation. Depending on time and luck your apt currently might pick a
+host which is located half around the globe for you, resulting in
+sometimes really slow download rates. 
+
+## Idea
+
+The current idea is to only present a list of security mirrors to
+you which are located on the continent you live on. We are aware that
+this won't work for all continents at the moment. For this reason we
+are also currently moving machines around the globe.
+
+## How to test
+
+The easiest way for you to test is using bind9's dig command.
+
+When trying from Germany one should get:
+<pre>
+zobel@lunar:~% dig -ttxt +short security.geo.debian.org
+"Europe view"
+</pre>
+
+When trying from US one should get:
+<pre>
+zobel@gluck:~% dig -ttxt +short security.geo.debian.org
+"North America view"
+</pre>
+
+## Technique
+
+The patch we used for bind9 uses
+[libgeoip](http://packages.debian.org/geoip) and [MaxMind's GeoLite
+Country database](http://www.maxmind.com/app/geolitecountry).
+[This](http://vancouver.yorkcabal.org.uk/~steve/.bind/geoip.patch)
+patch was necessary to get bind to play nicely.
+
+As we don't want to break security.debian.org at this stage of our
+testing, we decided to add a new subdomain security.geo.debian.org with
+which we are currently playing.
+
+Having an ACL for EU defining all the countries belonging to the
+European Subcontinent, a config sniplet for security.debian.org's zone
+looks like this:
+
+<pre>
+// Europe
+acl EU {
+        country_AD;
+        country_AL;
+        country_AT;
+        country_AX;
+        country_BA;
+        country_BE;
+        country_BG;
+        country_BY;
+        country_CH;
+        country_CZ;
+        country_DE;
+        country_DK;
+        country_EE;
+        country_ES;
+        country_FI;
+        country_FO;
+	...
+}
+</pre>
+
+<pre>
+view "EU" {
+        match-clients {
+                EU;
+        };
+        zone "security.geo.debian.org" {
+                type master;
+                file "/etc/bind/zones/security.debian.org.EU.zone";
+                notify no;
+        };
+};
+</pre>
+
+To be sure we don't miss any contries, we added an additional view
+default, to catch what we didn't catch with the country codes:
+
+<pre>
+view "other" {
+        match-clients { any; };
+        zone "security.geo.debian.org" {
+                type master;
+                file "/etc/bind/db.security.debian.org";
+                notify no;
+        };
+};
+</pre> 

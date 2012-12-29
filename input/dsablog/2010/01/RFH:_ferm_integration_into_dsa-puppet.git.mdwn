@@ -1,0 +1,22 @@
+[[!meta author="Martin Zobel-Helas"]]
+
+The Debian Project currently runs about [100 machines](http://db.debian.org/machines.cgi) all over the
+world with different services. Those are mainly managed by the [Debian
+System Administration team](http://wiki.debian.org/Teams/DSA). For central configuration management we
+use [Puppet](http://reductivelabs.com/products/puppet/).
+The Puppet config we use is publicly available [here](http://git.debian.org/?p=mirror/dsa-puppet.git).
+
+Our next goal is to have a more or less central configuration of our
+iptables rules on all those machines. Some of the machines have
+home-brewed firewall scripts, some use ferm.
+
+
+Your mission, if you choose to accept it, is to provide us with a new
+dsa-puppet git branch with a module "ferm" that we can roll out to all
+our hosts. 
+
+It might want to use information from the other puppet modules like
+"apache2_security_mirror" or "buildd" to decide which incoming traffic
+should be allowed.
+
+DSA will of course provide you with all necessary further information.

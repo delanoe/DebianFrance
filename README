@@ -1,0 +1,6 @@
+Procedure à suivre pour la mise en place du site:
+
+1) adapter DebianFrance.setup
+2) ikiwiki --setup DebianFrance.setup
+3) ikiwiki --refresh
+

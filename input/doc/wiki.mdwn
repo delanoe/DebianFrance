@@ -1,0 +1,13 @@
+contributing to the dsa.debian.org wiki
+=======================================
+
+You're welcome to contribute to the dsa.debian.org wiki!
+
+The wiki is managed via ikiwiki. To contribute, you should clone its Git
+repository as follows:
+
+        git clone https://db.debian.org/git/dsa-wiki.git/
+
+Then perform your changes, publish them somewhere, and ask DSA to pull from
+your tree by
+[filing a ticket via RT](http://wiki.debian.org/Teams/DSA/RTUsage).

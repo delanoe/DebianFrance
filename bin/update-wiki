@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -e
+umask 0002
+
+WC="/srv/dsa.debian.org/dsa-wiki"
+DEST="/srv/dsa.debian.org/htdocs"
+URL="http://dsa.debian.org/"
+UPDATE=1
+
+! [ -e "$HOME/.dsa-wiki-local" ] || . "$HOME/.dsa-wiki-local"
+
+[ "$UPDATE" != 1 ] || ( cd "$WC" && env -i git pull )
+
+if [ "$UPDATE" != 1 ]; then
+	GITPLUGIN=""
+else
+	GITPLUGIN="--plugin git"
+fi
+
+env -i "HOME=$HOME" \
+    ikiwiki \
+	--timeformat '%F' \
+	--wikiname 'DSA' \
+	--url "$URL" \
+	--adminemail debian-admin@debian.org \
+	--underlaydir "$WC/underlay" \
+	--templatedir "$WC/templates" \
+	--no-discussion \
+	--refresh \
+	--atom \
+	--rss \
+	--plugin template \
+	--plugin toggle \
+	--plugin inline \
+	--plugin sidebar \
+	--plugin table \
+	--plugin creole \
+	$GITPLUGIN \
+	--disable-plugin openid \
+	--disable-plugin sandbox \
+	--disable-plugin passwordauth \
+	"$WC/input" \
+	"$DEST"

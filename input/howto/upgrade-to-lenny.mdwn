@@ -1,0 +1,188 @@
+
+# Upgrade from etch to lenny
+
+make apt sane:
+
+	echo 'Acquire::PDiffs "false";' > /etc/apt/apt.conf.d/local-pdiff
+        echo 'APT::Install-Recommends 0;' > /etc/apt/apt.conf.d/local-recommends
+
+
+add volatile to sources list and upgrade (at least the archive keyring)
+
+	grep volatile /etc/apt/sources.list || cat >> /etc/apt/sources.list << EOF
+	deb     http://volatile.debian.net/debian-volatile etch/volatile  main
+	EOF
+	apt-get update && apt-get dist-upgrade
+
+
+turn off samhain
+
+	/etc/init.d/samhain stop
+
+
+maybe turn off exim
+
+	/etc/init.d/exim4 stop
+	mv /etc/rc2.d/S20exim4 /etc/rc2.d/K20exim4 # so it stays down
+
+
+install deborphan, clean up
+
+	apt-get install deborphan dialog
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2!="install" {print $1}'
+	echo "really purge these [y/N]?"; read ans; [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2!="install" {print $1}'`
+
+
+remove cruft and prepare sources.list update
+
+	rm -f /etc/apt/sources.liste
+	mkdir -p /etc/apt/sources.list.d
+
+
+change sources list entries to lenny:
+
+	mirror=`cat /etc/apt/sources.list | awk '/debian/ {print $2; exit}'`
+	echo "Mirror is $mirror"; echo "Fix stuff if this seems wrong"; echo "XXXXXXXXXXXXXXXXXXXXXXX"
+	echo "## VERIFY THE MIRROR IS CORRECT ##"; read
+
+
+write new sources.list.d/ entries:
+
+	(! [ -e /etc/apt/sources.list ] || mv /etc/apt/sources.list /etc/apt/sources.list-oldetch) &&
+	cd /etc/apt/sources.list.d &&
+	cat > backports.org.list << EOF &&
+	deb     http://debian.sil.at/backports.org/        lenny-backports main
+	EOF
+	sed -e "s#@@MIRROR@@#$mirror#g" > debian.list << EOF &&
+	deb     @@MIRROR@@      lenny           main
+	EOF
+	cat > debian.org.list << EOF &&
+	deb     http://db.debian.org/debian-admin          lenny            main
+	EOF
+	cat > security.list << EOF &&
+	deb     http://security.us.debian.org/             lenny/updates    main
+	EOF
+	cat > volatile.list << EOF &&
+	deb     http://volatile.debian.org/debian-volatile lenny/volatile   main
+	EOF
+	(! [ -e /etc/apt/preferences ] || mv /etc/apt/preferences /etc/apt/preferences-oldetch) &&
+	cat > /etc/apt/preferences << EOF &&
+	Package: *
+	Pin: release o=Backports.org archive
+	Pin-Priority: 200
+	EOF
+	(! grep restricted /etc/apt/sources.list-oldetch || echo 'deb     http://db.debian.org/debian-admin          lenny-restricted non-free' >> debian.org.list )
+
+
+add bpo key
+
+	apt-key add - << EOF
+	-----BEGIN PGP PUBLIC KEY BLOCK-----
+	Version: GnuPG v1.4.9 (GNU/Linux)
+
+	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
+	AJ4v9ojJnvJu2yUl4W586soBm+wsLg==
+	=n4L0
+	-----END PGP PUBLIC KEY BLOCK-----
+	EOF
+
+
+update apt list
+
+	apt-get update
+
+
+upgrade
+
+	apt-get install locales-all
+
+
+rest follows
+
+	apt-get dist-upgrade
+
+
+reject changes to /etc/pam.d/sudo (puppet will install a new file later anyway)
+
+merge changes into /etc/munin/plugin-conf.d/munin-node (change new and accept (A)):
+
+	sed -i -e 's/adm$/adm, maillog/' /etc/munin/plugin-conf.d/munin-node.dpkg-new
+
+ * keep local (i.e. reject (N)):
+  * all changes relating to exim  (in /etc/exim4 and in logrotate)
+  * /etc/ldap/ldap.conf
+  * /etc/nagios/nrpe.cfg
+  * /etc/samhain/samhainrc
+  * /etc/munin/munin-node.conf
+ * merge: /etc/logrotate.d/apache2
+ * take new: /etc/apache2/apache2.conf
+ * maybe take new: /etc/apache2/ports.conf
+ * change ServerTokens from "Full" to "ProductOnly" in /etc/apache2/conf.d/security
+
+
+update nagios on samosa  (add host to lenny hostgroup)
+
+maybe install [[puppet|puppet-setup]]
+
+check for obsolete packages
+
+	/usr/lib/nagios/plugins/dsa-check-packages
+
+clean up old libs
+
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2!="install" {print $1}'
+	echo "really purge these [y/N]?"; read ans; [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2!="install" {print $1}'`
+
+possibly reboot
+
+re-enable exim
+
+	mv /etc/rc2.d/K20exim4 /etc/rc2.d/S20exim4
+	env -i /etc/init.d/exim4 start

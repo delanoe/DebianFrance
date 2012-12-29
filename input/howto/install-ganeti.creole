@@ -1,0 +1,332 @@
+== How To Install Ganeti Clusters and Instances ==
+
+=== suppositions ===
+
+Suppose that there are two identical hosts: foo.debian.org and bar.debian.org.
+
+They are running squeeze and have been integrated into Debian infrastructure.
+
+They will serve as nodes in a ganeti cluster named foobar.debian.org.
+
+They have a RAID1 array exposing three partitions: c0d0p1 for /, c0d0p2 for
+swap and c0d0p3 for lvm volume groups to be used by ganeti via drbd.
+
+They have two network interfaces: eth0 (public) and eth1 (private).
+
+The public network is A.B.C.0/24 with gateway A.B.C.254.
+
+The private network is E.F.G.0/24 with no gateway.
+
+Suppose that the first instance to be hosted on foobar.debian.org is
+qux.debian.org.
+
+The following DNS records exist:
+
+{{{
+    foobar.debian.org.                  IN A   A.B.C.1
+    foo.debian.org.                     IN A   A.B.C.2
+    bar.debian.org.                     IN A   A.B.C.3
+    qux.debian.org.                     IN A   A.B.C.4
+    foo.debprivate-hoster.debian.org.   IN A   E.F.G.2
+    bar.debprivate-hoster.debian.org.   IN A   E.F.G.3
+}}}
+
+=== install required packages ===
+
+On each node, install the required packages:
+
+{{{
+    apt-get install fai-client ssed extlinux
+    apt-get install {drbd8-utils,ganeti2,ganeti-htools}/squeeze-backports ganeti-instance-debootstrap qemu-kvm
+}}}
+
+=== configure kernel modules ===
+
+On each node, ensure that the required kernel modules are loaded at boot:
+
+{{{
+    ainsl /etc/modules 'drbd minor_count=255 usermode_helper=/bin/true'
+    ainsl /etc/modules 'hmac'
+    ainsl /etc/modules 'tun'
+    ainsl /etc/modules 'ext3'
+}}}
+
+=== configure networking ===
+
+On each node, ensure that br0 (not eth0) and eth1 are configured.
+
+The bridge interface, br0, is used by the guest virtual machines to reach the
+public network.
+
+If the guest virtual machines need to access the private network, then br1
+should be configured rather than eth1.
+
+To prevent the link address changing due to startup/shutdown of virtual
+machines, explicitly set the value.
+
+This is the interfaces file for foo.debian.org:
+
+{{{
+    auto br0
+    iface br0 inet static
+      bridge_ports eth0
+      bridge_maxwait 0
+      bridge_fd 0
+      address A.B.C.2
+      netmask 255.255.255.0
+      gateway A.B.C.254
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+
+    auto eth1
+    iface eth1 inet static
+      address E.F.G.2
+      netmask 255.255.255.0
+}}}
+
+This is the interfaces file for bar.debian.org:
+
+{{{
+    auto br0
+    iface br0 inet static
+      bridge_ports eth0
+      bridge_maxwait 0
+      bridge_fd 0
+      address A.B.C.3
+      netmask 255.255.255.0
+      gateway A.B.C.254
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+
+    auto eth1
+    iface eth1 inet static
+      address E.F.G.3
+      netmask 255.255.255.0
+}}}
+
+=== configure lvm ===
+
+On each node, configure lvm to ignore drbd devices and to prefer
+{{{/dev/cciss}}} devices names over {{{/dev/block}}} device names
+([[http://code.google.com/p/ganeti/issues/detail?id=93|why?]]):
+
+{{{
+    ssed -i \
+      -e 's#^\(\s*filter\s\).*#\1= [ "a|.*|", "r|/dev/drbd[0-9]+|" ]#' \
+      -e 's#^\(\s*preferred_names\s\).*#\1= [ "^/dev/dm-*/", "^/dev/cciss/" ]#' \
+      /etc/lvm/lvm.conf
+    service lvm2 restart
+}}}
+
+=== create lvm volume groups ===
+
+On each node, create a volume group:
+
+{{{
+    vgcreate vg_ganeti /dev/cciss/c0d0p3
+}}}
+
+=== create kvmU symbolic links ===
+
+On each node, create vmlinuz and initrd symlinks as expected by the kvm
+hypervisor (not strictly required if all guests will boot from their own
+kernels):
+
+{{{
+    ln -s -T /boot/vmlinuz-2.6.32-5-amd64 /boot/vmlinuz-2.6-kvmU
+    ln -s -T /boot/initrd.img-2.6.32-5-amd64 /boot/initrd.img-2.6-kvmU
+}}}
+
+=== exchange ssh keys ===
+
+on each node:
+
+{{{
+   mkdir -m 0700 -p /root/.ssh &&
+   ln -s /etc/ssh/ssh_host_rsa_key /root/.ssh/id_rsa
+}}}
+
+=== configure iptables (via ferm) ===
+
+the nodes must connect to each other over the public and private networks for a number of reasons; see the ganeti2 module in puppet
+
+=== instantiate the cluster ===
+
+On the master node (foo) only:
+
+{{{
+    gnt-cluster init \
+      --master-netdev br0 \
+      --vg-name vg_ganeti \
+      --secondary-ip E.F.G.2 \
+      --enabled-hypervisors kvm \
+      --nic-parameters link=br0 \
+      --mac-prefix 00:16:37 \
+      --no-ssh-init \
+      --no-etc-hosts \
+      --hypervisor-parameters kvm:initrd_path=/boot/initrd.img-2.6-kvmU,kernel_path=/boot/vmlinuz-2.6-kvmU \
+      foobar.debian.org
+}}}
+
+Note the following:
+
+* the master network device is set to br0, matching the public network bridge interface created above
+* the volume group is set to vg_ganeti, matching the volume group created above
+* the secondary IP address is set to the value of the master node's interface on the private network
+* the nic parameters for instances is set to use br0 as default bridge
+* the MAC prefix is registered in the dsa-kvm git repo
+
+=== add slave nodes ===
+
+For each slave node (only bar for this example):
+
+on the slave, append the master's /etc/ssh/ssh_host_rsa_key.pub to
+/etc/ssh/userkeys/root.  This is only required temporarily - once
+everything works, puppet will put it/keep it there.
+
+on the master node (foo):
+
+{{{
+    gnt-node add \
+      --secondary-ip E.F.G.3 \
+      --no-ssh-key-check \
+      --no-node-setup \
+      bar.debian.org
+}}}
+
+Note the following:
+
+* the secondary IP address is set to the value of the slave node's interface on the private network
+
+=== verify cluster ===
+
+On the master node (foo):
+
+{{{
+    gnt-cluster verify
+}}}
+
+If everything has been configured correctly, no errors should be reported.
+
+=== create the 'dsa' variant ===
+
+Ensure that the debootstrap+dsa variant has been installed by puppet (see ganeti2 module in dsa-puppet).
+
+----
+
+== How To Install Ganeti Instances ==
+
+Suppose that qux.debian.org will be an instance (a virtual machine) hosted on
+the foobar.debian.org ganeti cluster.
+
+Before adding the instance, an LDAP entry must be created so that an A record
+for the instance (A.B.C.4) exists.
+
+=== create the instance ===
+
+On the master node (foo):
+
+{{{
+    gnt-instance add \
+      --node foo:bar \
+      --disk-template drbd \
+      --os-size 4GiB \
+      --os-type debootstrap+dsa \
+      --hypervisor-parameters kvm:initrd_path=,kernel_path= \
+      --net 0:ip=A.B.C.4 \
+      qux.debian.org
+}}}
+
+Note the following:
+
+* the primary and secondary nodes have been explicitly set
+* the operating system type is 'debootstrap+dsa'
+* the network interfarce 0 (eth0 on the system) is set to the instance's interface on the public network
+* If qux.d.o does not yet exist in DNS/LDAP, you may need --no-ip-check --no-name-check.  Be careful that the hostname and IP address are not taken already!
+
+----
+
+== Variations ==
+
+If the instances require access to the private network, then there are two modifications necessary.
+
+=== re-configure networking ===
+
+On the nodes, ensure that br1 is configured (rather than eth1).
+
+This is the interfaces file for foo.debian.org:
+
+{{{
+    auto br0
+    iface br0 inet static
+      bridge_ports eth0
+      bridge_maxwait 0
+      bridge_fd 0
+      address A.B.C.2
+      netmask 255.255.255.0
+      gateway A.B.C.254
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+
+    auto br1
+    iface br1 inet static
+      bridge_ports eth1
+      bridge_maxwait 0
+      bridge_fd 0
+      address E.F.G.2
+      netmask 255.255.255.0
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+}}}
+
+This is the interfaces file for bar.debian.org:
+
+{{{
+    auto br0
+    iface br0 inet static
+      bridge_ports eth0
+      bridge_maxwait 0
+      bridge_fd 0
+      address A.B.C.3
+      netmask 255.255.255.0
+      gateway A.B.C.254
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+
+    auto br1
+    iface br1 inet static
+      bridge_ports eth1
+      bridge_maxwait 0
+      bridge_fd 0
+      address E.F.G.3
+      netmask 255.255.255.0
+      up ip link set addr $(cat /sys/class/net/$IFACE/address) dev $IFACE
+}}}
+
+=== create or update the instance  ===
+
+When creating the instance, indicate both networks:
+
+{{{
+    gnt-instance add \
+      --node foo:bar \
+      --disk-template drbd \
+      --os-size 4GiB \
+      --os-type debootstrap+dsa \
+      --hypervisor-parameters kvm:initrd_path=,kernel_path= \
+      --net 0:ip=A.B.C.4 \
+      --net 1:link=br1,ip=E.F.G.4 \
+      qux.debian.org
+}}}
+
+* If qux.d.o does not yet exist in DNS/LDAP, you may need --no-ip-check --no-name-check.  Be careful that the hostname and IP address are not taken already!
+
+When updating an existing instance, add the interface:
+
+{{{
+    gnt-instance shutdown qux.debian.org
+    gnt-instance modify \
+      --net add:link=br1,ip=E.F.G.4 \
+      qux.debian.org
+    gnt-instance startup qux.debian.org
+}}}
+
+Please note that the hook scripts are run only at instance instantiation.  When
+adding interfaces to an instance, the guest opearting system must be updated
+manually.
+

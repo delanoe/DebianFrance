@@ -1,0 +1,82 @@
+== add an account to ud-ldap ==
+
+=== Introduction ===
+
+A Debian Account Manager (DAM) will submit an RT ticket to ask that an account
+be created for a new member of the Debian Project.
+
+Initially, the RT ticket will be assigned to a Debian Keyring Maintainer (DKM)
+so that Debian's Keyring may be updated with the user's GPG key.
+
+Subsequently, the RT ticket will be assigned to a Debian System Administrator
+(DSA) so that Debian's LDAP may be updated.
+
+This HOWTO documents DSA's actions relating to account creation.
+
+The RT ticket will contain the following details in a GPG-signed message:
+* the user's account type ("uploading DD")
+* the user's GPG key fingerprint
+* the user's full name (first name, middle name, last name)
+* the user's forwarding address
+* the user's preferred account name
+
+=== Procedure for New Accounts ===
+
+Step 1: Download the GPG-signed message from RT and verify the signature.
+Ensure that the message has been signed by a DAM (for a list of DAMs, see
+http://wiki.debian.org/DAManager or http://www.debian.org/intro/organization).
+
+Step 2: Create an entry in LDAP by executing ud-useradd on draghi.
+
+{{{
+	you@home~$ ssh you@db-master.debian.org
+	you@draghi~$ ud-useradd
+}}}
+
+You will be prompted to enter the fingerprint; the preferred account name; the
+first, middle and last names; and the forwarding address.  Some of these values
+will be extracted from the GPG key, if available.
+
+Use the @debian.org for the debian-private subscription.
+
+Accept the randomly generated password.
+
+Step 3: Confirm account creation.
+
+Step 4: Resolve the RT ticket.  Enter the 'final information collected' emitted
+by ud-adduser as the message of the resolution action.  Carbon copy the
+forwarding address and da-manager@debian.org.
+
+=== Procedure for Upgrading Guest Accounts ===
+
+Step 1: same as above
+
+Step 2: Remove the GPG key from guest-keyring.
+
+{{{
+	you@home~$ sudo apt-get install jetring
+	you@home~$ git clone ssh://db.debian.org/git/guest-keyring.git
+	you@home~$ cd guest-keyring
+	you@home~$ ./del-key <fingerprint>
+	you@home~$ git status
+	you@home~$ git add debian-guest/delete-<fingerprint substring>
+	you@home~$ git commit -a
+}}}
+
+Step 3: Modify the LDAP entry.
+
+{{{
+	you@draghi~$ export EDITOR=vim
+	you@draghi~$ ldapvi -ZZ -D uid=<you>,ou=users,ou=debian,ou=org
+		find account
+		set gidNumber: 800
+		add privateSub: <account>@debian.org
+		del allowedHost
+		del shadowExpire
+}}}
+
+Step 4: Email welcome-message-800 to the user, substituting parameters.
+
+Step 5: Resolve the RT ticket.  Carbon copy the forwarding address and
+da-manager@debian.org.
+

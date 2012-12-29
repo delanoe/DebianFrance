@@ -1,0 +1,74 @@
+# Debian System Administrators
+
+The Debian System Debian Administration Team (DSA) is the team that
+keeps debian.org's infrastructure going. This is the internal team wiki,
+which as some howto mainly targeted for the team members.  
+
+To contact us, mail debian-admin@lists.debian.org.
+
+To request installation of build dependencies please
+[mail us following some guidelines](doc/install-req).
+For other things you can also create a ticket in [RT](http://wiki.debian.org/Teams/DSA/RTUsage).
+
+For a list of servers check
+[ud-ldap](https://db.debian.org/machines.cgi), or
+[munin](http://munin.debian.org/), or
+[nagios](https://nagios.debian.org/)
+(try dsa-guest, no password).
+
+## source repositories
+
+Copies of our VCS repositories are available on
+[alioth](http://anonscm.debian.org/gitweb/?s=mirror%2Fdsa-). If you want to
+prepare patches for any of our GIT repositories please use git format-patch and
+mail them to debian-admin@lists.debian.org or attach them to the according RT
+ticket.
+
+## documentation
+
+* [[doc/wiki]]: How to contribute to the dsa.d.o wiki
+* [RT Usage](http://wiki.debian.org/Teams/DSA/RTUsage) - offsite
+* [[user/sudo]]: How to set sudo passwords.
+* [[doc/install-req]]: guidelines to request package installation in chroots
+* [dchroot documentation](http://www.debian.org/doc/developers-reference/resources.html#dchroot): How dchroot can be used on porter machines
+* [[doc/guest-account]]: guest account access to porter machines
+* [[doc/subdomains]]: facilities offered to teams with a dedicated subdomain
+
+## Internal documentation
+
+* [[howto/dns]]
+* [[howto/new-machine]]: How to setup and integrate machines into debian.org's infrastructure.
+* [[howto/decomission]]: How to decomission a machine
+* [[howto/puppet-setup]]
+* [[howto/upgrade-to-lenny]]
+* [[howto/upgrade-to-squeeze]]
+* [[howto/upgrade-to-wheezy]]
+* [[howto/install-ganeti]]: ganeti related documentation
+* [[howto/ilo-https]]
+* [[howto/backup]]
+* [[howto/exim-ca]]
+* [[howto/iscsi]]: How to setup a new iscsi initiator
+* [[howto/export-iscsi]]: How to export new iscsi LUNs
+* [[howto/install-kvm]]: How to setup a new kvm domain without going through d-i etc.
+* [[howto/postgres]]: Random postgres stuff
+* [[howto/add-guest]]: How to add guests to ud-ldap
+* [[howto/add-account]]: How to add accounts to ud-ldap / upgrade guest accounts
+* [[howto/swarm-kernel]]: How to build kernels for our swarm boxes
+* [[howto/drac-reset]]: How to beat the radacm rootk^Wbinary only software.
+* [[howto/dchroot]]: porter chroots setup
+* [[howto/new-dpl]]: What to do when we have a new DPL
+
+## ports
+
+* [[ports/kfreebsd]]: Open issues with the kFreeBSD ports
+* [[ports/porter-chroots-install]]: some info how to install stuff in porter chroots
+
+## misc
+
+* [[hardware-wishlist]]
+* [[OID-Assignments|iana]]
+* [[poneys]]
+
+## DSA blog
+
+* [[dsablog]] - Team blog of the DSA team 

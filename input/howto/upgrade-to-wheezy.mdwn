@@ -1,0 +1,133 @@
+
+# Upgrade from squeeze to wheezy
+
+Make sure to coordinate with whoever uses the host, be it the buildd
+operator, the QA team, the ftp team or just announce it if it's a
+general developer box.
+
+on buildds:
+
+	cd ~buildd
+	sudo su - buildd
+	touch NO-DAEMON-PLEASE EXIT-DAEMON-PLEASE && exit
+
+	now wait for the buildd to quit
+
+turn off samhain
+
+	cd /etc/rc2.d/
+	service samhain stop &&
+	prio=$(ls -1 S*samhain | cut -b 2-3); mv S${prio}samhain K${prio}samhain # so it stays down
+
+
+maybe turn off exim
+
+	cd /etc/rc2.d/
+	service exim4 stop &&
+	prio=$(ls -1 S*exim4* | cut -b 2-3); mv S${prio}exim4 K${prio}exim4 # so it stays down
+
+
+install deborphan, clean up
+
+	apt-get autoremove
+	apt-get install deborphan dialog
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2=="deinstall" {print $1}' &&
+	echo "really purge these [y/N]?" && read ans && [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2=="deinstall" {print $1}'` &&
+	echo "These are not at install:" && dpkg --get-selections | awk '$2!="install" {print $1}'
+
+change sources list entries to wheezy:
+
+	cd /etc/apt/sources.list.d && sed -i "s#squeeze#wheezy#g" debian.list && sed -i "s#squeeze#wheezy#g" volatile.list && sed -i "s#squeeze#wheezy#g" security.list
+
+update apt list
+
+	apt-get update
+
+upgrade
+
+	apt-get install locales-all apt dpkg base-files
+
+answer question to libc6 "Restart services automaticaly" with "yes"
+
+answer "Yes" to changes of /etc/default/rcS, [http://bugs.debian.org/694928](BR#694928)
+and change "FSCKFIX=yes" afterwards, at least on hardware without remote access (like arm*)
+
+rest follows
+
+	apt-get dist-upgrade
+
+use dash as system shell (/bin/sh).
+
+reject changes to /etc/pam.d/sudo (puppet will install a new file later anyway)
+
+reject changes to /etc/munin/plugin-conf.d/munin-node (puppet will install a new file later anyway)
+
+ * keep local (i.e. reject (N)):
+  * all changes relating to exim  (in /etc/exim4 and in logrotate)
+  * /etc/nagios/nrpe.cfg
+  * /etc/ldap/ldap.conf
+  * /etc/puppet/puppet.conf
+
+  * /etc/samhain/samhainrc
+  * /etc/munin/munin-node.conf
+  * /etc/logrotate.d/apache2
+  * /etc/apache2/apache2.conf
+  * /etc/apache2/ports.conf
+
+ * install new version:
+  * /etc/init.d/stunnel4
+
+update dsa-nagios.git (add host to wheezy hostgroup)
+
+do a puppet run:
+
+	puppetd -t; puppetd -t
+
+upgrade once more (security etc)
+
+	apt-get update && apt-get dist-upgrade
+
+clean up old libs
+
+	orphaner
+	orphaner -n
+	orphaner -a
+	orphaner -a -n
+
+check for unneeded/obsolete packages
+
+	apt-get autoremove
+
+	/usr/lib/nagios/plugins/dsa-check-packages
+
+purge removed packages
+
+	dpkg --get-selections | awk '$2=="deinstall" {print $1}' &&
+	echo "really purge these [y/N]?" && read ans && [ "$ans" = "y" ] && dpkg --purge `dpkg --get-selections | awk '$2=="deinstall" {print $1}'` &&
+	echo "These are not at install:" && dpkg --get-selections | awk '$2!="install" {print $1}'
+
+purge cruft that upgrade doesn't remove
+
+	apt-get remove --purge emacs22-common libxmlrpc-ruby libcap1 emacs22-nox emacs22-bin-common libvolume-id0 gcc-4.2-base ifenslave libopenssl-ruby1.8 mailx
+
+re-init samhain
+
+possibly reboot
+
+re-enable exim, samhain
+
+	mv /etc/rc2.d/K??exim4 /etc/rc2.d/S02exim4
+	mv /etc/rc2.d/K??samhain /etc/rc2.d/S02samhain
+	env -i /etc/init.d/exim4 start
+	env -i /etc/init.d/samhain start
+
+	insserv
+
+re-init samhain
