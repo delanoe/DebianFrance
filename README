@@ -3,4 +3,4 @@ Procedure à suivre pour la mise en place du site:
 1) ikiwiki auto-blog.setup
 2) ikiwiki --setup DebianFrance.setup
 3) git commits
-4) ikiwiki --refresh
+4) ikiwiki [source] [destination]
